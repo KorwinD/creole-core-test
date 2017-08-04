@@ -126,11 +126,11 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 
 void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
 {
-	cout << seqlen << endl;
-	//str.erase(str.end() - seqlen + 3, str.end());
+	//cout << seqlen << endl;
+	str.erase(str.end() - seqlen, str.end());
 	insert(str, 0, L"</h", 3);
 	str.push_back(wchar_t('0' + dict["header"]));
-	insert(str, 0, L">\n", 2);
+	insert(str, 0, L">", 2);
 	dict["header"] = 0;
 }
 
@@ -305,9 +305,14 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 		}
 		case wchar_t('=') :
 		{
-			if (suspect == *it) seqlen++;
+			if (suspect == *it)
+			{
+				seqlen++;
+				str.push_back(*it);
+			}
 			else
 			{
+				str.push_back(*it);
 				suspect = *it;
 				seqlen = 1;
 			}
@@ -315,6 +320,8 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 		}
 		default:
 		{
+			seqlen = 0;
+			suspect = wchar_t('a');
 			str.push_back(*it);
 			break;
 		}
