@@ -126,7 +126,8 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 
 void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
 {
-	str.erase(str.end() - seqlen + 2, str.end());
+	cout << seqlen << endl;
+	//str.erase(str.end() - seqlen + 3, str.end());
 	insert(str, 0, L"</h", 3);
 	str.push_back(wchar_t('0' + dict["header"]));
 	insert(str, 0, L">\n", 2);
@@ -300,6 +301,7 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 		case wchar_t('\n') :
 		{
 			header_end(str, seqlen, suspect, dict);
+			break;
 		}
 		case wchar_t('=') :
 		{
@@ -309,10 +311,12 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 				suspect = *it;
 				seqlen = 1;
 			}
+			break;
 		}
 		default:
 		{
 			str.push_back(*it);
+			break;
 		}
 	}
 }
@@ -340,7 +344,6 @@ namespace Creole
 	{
 		int seqlen = 0;
 		auto suspect = wchar_t('a');
-		
 		vector <wchar_t> new_str;
 		if (!dict["section"])
 		{
