@@ -126,9 +126,10 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 
 void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
 {
-	insert(str, 0, L"<h", 2);
-	str.push_back(wchar_t('0' + seqlen));
-	insert(str, 0, L"/>\n", 3);
+	str.erase(str.end() - seqlen + 2, str.end());
+	insert(str, 0, L"</h", 3);
+	str.push_back(wchar_t('0' + dict["header"]));
+	insert(str, 0, L">\n", 2);
 	dict["header"] = 0;
 }
 
