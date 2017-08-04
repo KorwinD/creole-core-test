@@ -155,9 +155,34 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			}
 			break;
 		}
+		case wchar_t('/') :
+		{
+			if (seqlen == 1)
+			{
+				str.push_back(wchar_t('/'));
+				seqlen = 0;
+				suspect = *it;
+			}
+			else
+			{
+				if (dict["cursive"])
+				{
+					dict["cursive"] = 0;
+					insert(str, 0, L"<em/>", 5);
+				}
+				else
+				{
+					dict["cursive"] = 1;
+					insert(str, 0, L"<em>", 4);
+				}
+				seqlen -= 2;
+				it -= 1;
+				suspect = *it;
+			}
+			break;
+		}
 		case wchar_t('=') :
 		{
-			cout << "test" << seqlen << " " << dist << endl;
 			if (seqlen > 6)
 			{
 				for (int j = 0; j < seqlen; j++) str.push_back('=');
@@ -228,6 +253,46 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				break;
 			}
 			case wchar_t('\\') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('/') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('*') :
 			{
 				if (*it == suspect)
 				{
