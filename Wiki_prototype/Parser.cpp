@@ -124,26 +124,195 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 	}
 }
 
-void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen)
+void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
+{
+	insert(str, 0, L"<h", 2);
+	str.push_back(wchar_t('0' + seqlen));
+	insert(str, 0, L"/>\n", 3);
+	dict["header"] = 0;
+}
+
+void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist)
 {
 	switch (suspect)
 	{
-	case wchar_t('\\') :
-	{
-		if (seqlen == 1)
+		case wchar_t('\\') :
 		{
-			str.push_back(wchar_t('\\'));
-			seqlen = 0;
-			suspect = *it;
+			if (seqlen == 1)
+			{
+				str.push_back(wchar_t('\\'));
+				seqlen = 0;
+				suspect = *it;
+			}
+			else
+			{
+				insert(str, 0, L"<br/>\n", 6);
+				seqlen -= 2;
+				it -= 1;
+				suspect = *it;
+			}
+			break;
+		}
+		case wchar_t('=') :
+		{
+			cout << "test" << seqlen << " " << dist << endl;
+			if (seqlen > 6)
+			{
+				for (int j = 0; j < seqlen; j++) str.push_back('=');
+				seqlen = 0;
+				suspect = *it;
+			}
+			else
+			{
+				if ((dist - seqlen) == 0)
+				{
+					insert(str , 0, L"<h", 2);
+					str.push_back(wchar_t('0'+seqlen));
+					str.push_back(wchar_t('>'));
+					dict["header"] = seqlen;
+				}
+				else
+				{
+					for (int j = 0; j < seqlen; j++) str.push_back('=');
+					seqlen = 0;
+					suspect = *it;
+				}
+			}
+			break;
+		}
+	}
+}
+
+void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist)
+{
+	if (iswalpha(*it) || iswalnum(*it))
+	{
+		if (seqlen > 0)
+		{
+			//cout << seqlen;
+			auto hlp = it;
+			changing(str, it, suspect, seqlen, dict, dist);
+			if (hlp == it) str.push_back(*it);
 		}
 		else
 		{
-			insert(str, 0, L"<br/>\n", 6);
-			seqlen -= 2;
-			it -= 1;
-			suspect = *it;
+			str.push_back(*it);
 		}
 	}
+	else
+	{
+		switch (*it)
+		{
+			//syntax symbols
+			case wchar_t('=') :
+			{
+				cout << "GETTT" << seqlen << endl;
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('\\') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			//non syntax symbols
+			case wchar_t(' ') :
+			{
+				if (seqlen > 0)
+				{
+					auto hlp = it;
+					changing(str, it, suspect, seqlen, dict, dist);
+					if (hlp == it) str.push_back(*it);
+				}
+				else
+				{
+					str.push_back(*it);
+				}
+				break;
+			}
+			case wchar_t('\n') :
+			{
+				if (seqlen > 0)
+				{
+					auto hlp = it;
+					changing(str, it, suspect, seqlen, dict, dist);
+					if (hlp == it) str.push_back(*it);
+				}
+				else
+				{
+					//str.push_back(*it);
+				}
+				break;
+			}
+			default:
+			{
+				if (seqlen > 0)
+				{
+					auto hlp = it;
+					changing(str, it, suspect, seqlen, dict, dist);
+					if (hlp == it) str.push_back(*it);
+				}
+				else
+				{
+					str.push_back(*it);
+				}
+				break;
+			}
+		}
+	}
+}
+
+void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
+{
+	switch (*it)
+	{
+		case wchar_t('\n') :
+		{
+			header_end(str, seqlen, suspect, dict);
+		}
+		case wchar_t('=') :
+		{
+			if (suspect == *it) seqlen++;
+			else
+			{
+				suspect = *it;
+				seqlen = 1;
+			}
+		}
+		default:
+		{
+			str.push_back(*it);
+		}
 	}
 }
 
@@ -159,100 +328,9 @@ int mode_def(map <string, int> &dict)
 	//7 — inline nowiki parsing mode(monospace)
 	//8 — preformatted nowiki mode
 
-	if (dict["header"]) return 5;
+	if (dict["header"] > 0) return 5;
 
 	return 0;
-}
-
-void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen)
-{
-	if (iswalpha(*it) || iswalnum(*it))
-	{
-		if (seqlen > 0)
-		{
-			auto hlp = it;
-			cout << seqlen << endl;
-			changing(str, it, suspect, seqlen);
-			if (hlp == it) str.push_back(*it);
-		}
-		else
-		{
-			str.push_back(*it);
-		}
-	}
-	else
-	{
-		switch (*it)
-		{
-		//syntax symbols
-		case wchar_t('\\') :
-		{
-			if (*it == suspect)
-			{
-				seqlen++;
-			}
-			else
-			{
-				if (seqlen > 0)
-				{
-					changing(str, it, suspect, seqlen);
-				}
-				else
-				{
-					suspect = *it;
-					seqlen = 1;
-				}
-			}
-			break;
-		}
-		//non syntax symbols
-		case wchar_t(' ') :
-		{
-			if (seqlen > 0)
-			{
-				auto hlp = it;
-				cout << seqlen << endl;
-				changing(str, it, suspect, seqlen);
-				if (hlp == it) str.push_back(*it);
-			}
-			else
-			{
-				str.push_back(*it);
-			}
-			break;
-		}
-		case wchar_t('\n') :
-		{
-			if (seqlen > 0)
-			{
-				auto hlp = it;
-				cout << seqlen << endl;
-				changing(str, it, suspect, seqlen);
-				if (hlp == it) str.push_back(*it);
-			}
-			else
-			{
-				str.push_back(*it);
-			}
-			break;
-		}
-		default:
-		{
-			if (seqlen > 0)
-			{
-				auto hlp = it;
-				cout << seqlen << endl;
-				changing(str, it, suspect, seqlen);
-				if (hlp == it) str.push_back(*it);
-			}
-			else
-			{
-				str.push_back(*it);
-			}
-			break;
-		}
-		}
-	}
 }
 
 namespace Creole
@@ -260,7 +338,6 @@ namespace Creole
 	std::vector <wchar_t> gString::St_string(vector <wchar_t> utfbuf, map <string, int> &dict)
 	{
 		int seqlen = 0;
-		auto mode = mode_def(dict);
 		auto suspect = wchar_t('a');
 		
 		vector <wchar_t> new_str;
@@ -273,9 +350,14 @@ namespace Creole
 
 		while (it != utfbuf.end())
 		{
+			auto mode = mode_def(dict);
 			if (mode == 0)
 			{
-				no_limitation_mode(new_str, it, suspect, seqlen);
+				no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+			}
+			else if (mode == 5)
+			{
+				header_parsing_mode(new_str, it, suspect, seqlen, dict);
 			}
 
 				it++;

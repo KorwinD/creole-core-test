@@ -43,7 +43,7 @@ void main()
 
 	while (getline(file, str))
 	{
-		string::iterator end_it = utf8::find_invalid(str.begin(), str.end());
+		auto end_it = utf8::find_invalid(str.begin(), str.end());
 		if (end_it != str.end()) {
 			cout << "Invalid UTF-8 encoding detected at line " << line_count << "\n";
 			cout << "This part is fine: " << string(str.begin(), end_it) << "\n";

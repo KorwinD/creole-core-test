@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Файлы ресурсов\Tests">
+      <UniqueIdentifier>{c9938d6c-1d16-4cb2-abf1-4574b4c64a61}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -34,11 +37,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.creole">
-      <Filter>Файлы ресурсов</Filter>
-    </None>
     <None Include="new.creole">
-      <Filter>Файлы ресурсов</Filter>
+      <Filter>Файлы ресурсов\Tests</Filter>
+    </None>
+    <None Include="test.creole">
+      <Filter>Файлы ресурсов\Tests</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

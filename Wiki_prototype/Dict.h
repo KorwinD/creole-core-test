@@ -5,7 +5,7 @@
 
 std::map <std::string, int> dict = 
 {
-	{ "section", 0 },
+	{"section", 0},
 	{"u_lvl", 0},
 	{"n_lvl", 0},
 	{"nowiki", 0},
