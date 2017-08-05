@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include <windows.h>
 #include "utf8.h"
 namespace Creole
 {

@@ -1,4 +1,5 @@
 #include <fstream>
+#include <windows.h>
 #include "Header.h"
 #include "Dict.h"
 #pragma warning(disable : 4996)

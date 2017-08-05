@@ -1,6 +1,7 @@
 #include "Header.h"
 #include <stdexcept>
 #include <ctype.h>
+#include <windows.h>
 #pragma warning(disable : 4996)
 
 using namespace std;
@@ -20,7 +21,7 @@ vector <wchar_t> allowed_symbols =
 
 int wctcmp(vector <wchar_t> a, wchar_t *b)
 {
-	for (int i = 0; i < min(a.size(), wcslen(b)); i++)
+	for (int i = 0; i < min(a.size(), wcslen(b)); i++) //TODO Write own min func
 	{
 		if (a[i] != b[i]) return -1;
 	}
@@ -441,16 +442,17 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 int mode_def(map <string, int> &dict)
 {
 	//0 — standart parsing mode
-	//1 — link without caption([[example.com]]), main part of link([[example.com|something]]), free-stand link(https:example.com) parsing mode
-	//2 — caption part of link([[example.com|something]]) parsing mode
-	//3 — image without caption({{image.png}}), main part of image({{image.png|image}}) parsing mode
-	//4 — caption part of image({{image.png|image}}) parsing mode
-	//5 — header parsing mode
-	//6 — tilda(~) parsing mode
-	//7 — inline nowiki parsing mode(monospace)
-	//8 — preformatted nowiki mode
+	//1 — free-stand link(https:example.com) parsing mode
+	//2 — link without caption([[example.com]]), main part of link([[example.com|something]]) parsing mode
+	//3 — caption part of link([[example.com|something]]) parsing mode
+	//4 — image without caption({{image.png}}), main part of image({{image.png|image}}) parsing mode
+	//5 — caption part of image({{image.png|image}}) parsing mode
+	//6 — header parsing mode
+	//7 — tilda(~) parsing mode
+	//8 — inline nowiki parsing mode(monospace)
+	//9 — preformatted nowiki mode
 
-	if (dict["header"]) return 5;
+	if (dict["header"]) return 6;
 
 	return 0;
 }
@@ -485,7 +487,7 @@ namespace Creole
 				{
 					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
 				}
-				else if (mode == 5)
+				else if (mode == 6)
 				{
 					header_parsing_mode(new_str, it, suspect, seqlen, dict);
 				}
