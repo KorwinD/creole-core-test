@@ -16,6 +16,12 @@ vector <wchar_t *> protocols =
 	{ L"mailto:" },
 };
 
+map <wchar_t *, wchar_t *> wikies = 
+{
+	{L"main:", L"tests/"}, //TODO Fix in future
+	{L"Wikipedia:", L"https://en.wikipedia.org/wiki/"},
+};
+
 vector <wchar_t> allowed_symbols = 
 {
 	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */} //TODO add treatment of final letter in free link 
@@ -67,18 +73,37 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 	if (word.size() != 0)
 	{
 		auto i = protocols.begin();
-
+		auto j = wikies.begin();
 		for (i; ; i++)
 		{
 
 			if (i == protocols.end())
 			{
-				word.clear();
 				break;
 			}
+
 			if (wctcmp(word, *i) == 0)
 			{
 				str.erase(str.end() - word.size(), str.end());
+				insert(str, 0, L"<a href=", 8);
+				str.insert(str.end(), wchar_t('"'));
+				dict["flink"] = 1;
+				break;
+			}
+		}
+
+		for (j; ; j++)
+		{
+			if (j == wikies.end())
+			{
+				word.clear();
+				break;
+			}
+			if (wctcmp(word, j->first) == 0)
+			{
+				str.erase(str.end() - word.size(), str.end());
+				word.clear();
+				insert(word, 0, j->second, wcslen(j->second));
 				insert(str, 0, L"<a href=", 8);
 				str.insert(str.end(), wchar_t('"'));
 				dict["flink"] = 1;
@@ -499,7 +524,7 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 
 }
 
-void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word, int &seqlen)
+void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word, int &seqlen, bool &foundation)
 {
 	if (*it == wchar_t('\n')) link_error(str, word, dict);
 	else if (*it == wchar_t(']')) seqlen++;
@@ -579,7 +604,7 @@ namespace Creole
 		int seqlen = 0;
 		auto suspect = wchar_t('a');
 		vector <wchar_t> new_str, word1, word2;
-
+		bool foundation = false;
 		auto it = utfbuf.begin();
 
 		while (it != utfbuf.end())
@@ -611,7 +636,7 @@ namespace Creole
 				else if (mode == 2)
 				{
 					filling(word1, mode, it, new_str);
-					mainlink_parsing_mode(new_str, it, dict, word1, seqlen);
+					mainlink_parsing_mode(new_str, it, dict, word1, seqlen, foundation);
 				}
 				else if (mode == 6)
 				{
