@@ -8,10 +8,10 @@ using namespace std;
 
 vector <wchar_t *> protocols =
 {
-	{ L"https" },
-	{ L"http" },
-	{ L"ftp" },
-	{ L"mailto" },
+	{ L"https:" },
+	{ L"http:" },
+	{ L"ftp:" },
+	{ L"mailto:" },
 };
 
 vector <wchar_t> allowed_symbols = 
@@ -92,6 +92,47 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 			
 		}
 
+	}
+}
+
+void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)
+{
+	if (word.size() == 0)
+	{
+		//str.push_back(wchar_t(':'));
+	}
+	else
+	{
+		auto i = protocols.begin();
+
+		for (i; ; i++)
+		{
+			if (i == protocols.end())
+			{
+				//str.push_back(wchar_t(':'));
+				word.clear();
+				break;
+			}
+			else
+			{
+				str.push_back(wchar_t('@'));
+				dict[""] = 1;
+				break;
+			}
+		}
+	}
+}
+
+void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, vector <wchar_t> str)
+{
+	if (mode == 0)
+	{
+		if (iswalpha(*it) || iswalnum(*it)) word.push_back(*it);
+		else if (*it == wchar_t(':')) word.push_back(*it);
+		else
+		{
+			word.clear();
+		}
 	}
 }
 
@@ -256,13 +297,12 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 	}
 }
 
-void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist)
+void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word1)
 {
 	if (iswalpha(*it) || iswalnum(*it))
 	{
 		if (seqlen > 0)
 		{
-			//cout << seqlen;
 			auto hlp = it;
 			changing(str, it, suspect, seqlen, dict, dist);
 			if (hlp == it) str.push_back(*it);
@@ -359,13 +399,35 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				break;
 			}
 			//non syntax symbols
+			case wchar_t(':') :
+			{
+				if (seqlen > 0)
+				{
+					auto hlp = it;
+					changing(str, it, suspect, seqlen, dict, dist);
+					if (hlp == it)
+					{
+						str.push_back(*it);
+						link_identification(word1, str, dict);
+					}
+				}
+				else
+				{
+					str.push_back(*it);
+					link_identification(word1, str, dict);
+				}
+				break;
+			}
 			case wchar_t(' ') :
 			{
 				if (seqlen > 0)
 				{
 					auto hlp = it;
 					changing(str, it, suspect, seqlen, dict, dist);
-					if (hlp == it) str.push_back(*it);
+					if (hlp == it)
+					{
+						str.push_back(*it);
+					}
 				}
 				else
 				{
@@ -404,6 +466,8 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 		}
 	}
 }
+
+void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict);
 
 void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
 {
@@ -454,6 +518,8 @@ int mode_def(map <string, int> &dict)
 
 	if (dict["header"]) return 6;
 
+	if (dict["flink"]) return 1;
+
 	return 0;
 }
 
@@ -463,7 +529,7 @@ namespace Creole
 	{
 		int seqlen = 0;
 		auto suspect = wchar_t('a');
-		vector <wchar_t> new_str;
+		vector <wchar_t> new_str, word1, word2;
 
 		auto it = utfbuf.begin();
 
@@ -482,20 +548,28 @@ namespace Creole
 					insert(new_str, 0, L"<p>\n", 4);
 					dict["section"] = 1;
 				}
+
 				auto mode = mode_def(dict);
+
 				if (mode == 0)
 				{
-					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+					filling(word1, mode, it, new_str);
+					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1);
+				}
+				else if (mode == 1)
+				{
+					filling(word1, mode, it, new_str);
+
 				}
 				else if (mode == 6)
 				{
 					header_parsing_mode(new_str, it, suspect, seqlen, dict);
 				}
 			}
-
 			it++;
 		}
-
+		word1.clear();
+		word2.clear();
 		return new_str;
 	}
 }

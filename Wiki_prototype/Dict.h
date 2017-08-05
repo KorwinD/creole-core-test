@@ -12,7 +12,7 @@ std::map <std::string, int> dict =
 	{"bold", 0},
 	{"cursive", 0},
 	{"header", 0},
-	{"link", 0},
+	{"flink", 0},
 	{"prelink", 0}
 	//{""}
 };
