@@ -21,9 +21,14 @@ vector <wchar_t> allowed_symbols =
 	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */}
 };
 
+vector <wchar_t> punctuation =
+{
+	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
+};
+
 int wctcmp(vector <wchar_t> a, wchar_t *b)
 {
-	for (int i = 0; i < min(a.size(), wcslen(b)); i++) //TODO Write own min func
+	for (int i = 0; i < min(a.size(), wcslen(b)); i++)
 	{
 		if (a[i] != b[i]) return -1;
 	}
@@ -39,8 +44,14 @@ void insert(vector <wchar_t> &str, int shift, wchar_t *add, int len)
 	}
 }
 
-void link_error1(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
+void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)
 {
+	insert(str, 0, L"[[", 2);
+	if (word.size()) insert(str, 0, &word[0], word.size());
+	word.clear();
+	dict["mlink"] = 0;
+
+	/*
 	new_str.push_back(wchar_t('['));
 	new_str.push_back(wchar_t('['));
 	if (dict["link"] == 2)
@@ -51,6 +62,7 @@ void link_error1(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, 
 		}
 	}
 	dict["link"] = 0;
+	*/
 }
 
 void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
@@ -91,7 +103,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 
 void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, vector <wchar_t> str)
 {
-	if (mode == 0)
+	if (mode == 0) 
 	{
 		if (iswalpha(*it) || iswalnum(*it)) word.push_back(*it);
 		else if (*it == wchar_t(':')) word.push_back(*it);
@@ -99,6 +111,10 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 		{
 			word.clear();
 		}
+	}
+	else if (mode == 2)
+	{
+		word.push_back(*it);
 	}
 }
 
@@ -140,7 +156,7 @@ void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <strin
 	dict["header"] = 0;
 }
 
-void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist)
+void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word)
 {
 	switch (suspect)
 	{
@@ -234,6 +250,22 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			}
 			break;
 		}
+		case wchar_t('[') :
+		{
+			if (seqlen == 2)
+			{
+				word.clear();
+				dict["mlink"] = 1;
+				it--;
+			}
+			else
+			{
+				for (int j = 0; j < seqlen; j++) str.push_back('[');
+				seqlen = 0;
+				suspect = *it;
+			}
+			break;
+		}
 		case wchar_t('=') :
 		{
 			if (seqlen > 6)
@@ -270,7 +302,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 		if (seqlen > 0)
 		{
 			auto hlp = it;
-			changing(str, it, suspect, seqlen, dict, dist);
+			changing(str, it, suspect, seqlen, dict, dist, word);
 			if (hlp == it) str.push_back(*it);
 		}
 		else
@@ -285,7 +317,6 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 			//syntax symbols
 			case wchar_t('=') :
 			{
-				cout << "GETTT" << seqlen << endl;
 				if (*it == suspect)
 				{
 					seqlen++;
@@ -294,7 +325,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist);
+						changing(str, it, suspect, seqlen, dict, dist, word);
 					}
 					else
 					{
@@ -314,7 +345,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist);
+						changing(str, it, suspect, seqlen, dict, dist, word);
 					}
 					else
 					{
@@ -334,7 +365,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist);
+						changing(str, it, suspect, seqlen, dict, dist, word);
 					}
 					else
 					{
@@ -354,7 +385,27 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist);
+						changing(str, it, suspect, seqlen, dict, dist, word);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('[') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist, word);
 					}
 					else
 					{
@@ -370,7 +421,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist);
+					changing(str, it, suspect, seqlen, dict, dist, word);
 					if (hlp == it)
 					{
 						str.push_back(*it);
@@ -389,7 +440,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist);
+					changing(str, it, suspect, seqlen, dict, dist, word);
 					if (hlp == it)
 					{
 						str.push_back(*it);
@@ -406,7 +457,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist);
+					changing(str, it, suspect, seqlen, dict, dist, word);
 					if (hlp == it) str.push_back(*it);
 				}
 				else
@@ -420,7 +471,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist);
+					changing(str, it, suspect, seqlen, dict, dist, word);
 					if (hlp == it) str.push_back(*it);
 				}
 				else
@@ -458,6 +509,11 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 		}
 	}
 
+}
+
+void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word)
+{
+	if (*it == wchar_t('\n')) link_error(str, word, dict);
 }
 
 void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
@@ -511,6 +567,8 @@ int mode_def(map <string, int> &dict)
 
 	if (dict["flink"]) return 1;
 
+	if (dict["mlink"]) return 2;
+
 	return 0;
 }
 
@@ -550,6 +608,11 @@ namespace Creole
 				else if (mode == 1)
 				{
 					freelink_parsing_mode(new_str, it, dict, word1);
+				}
+				else if (mode == 2)
+				{
+					filling(word1, mode, it, new_str);
+					mainlink_parsing_mode(new_str, it, dict, word1);
 				}
 				else if (mode == 6)
 				{
