@@ -500,7 +500,7 @@ namespace Creole
 			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')))
 			{
 				if (dict["section"]) section_end(new_str, dict);
-				//else new_str.push_back(wchar_t('\n'));
+				
 				int mode = 0;
 			}
 			else
