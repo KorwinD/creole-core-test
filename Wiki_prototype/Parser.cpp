@@ -18,36 +18,6 @@ vector <wchar_t> allowed_symbols =
 	{'!', '(', ')', ';', '@', '&', '+', '$', '?', '-', '_', '.', wchar_t(27) /* ' */}
 };
 
-wchar_t *https = L"https";
-
-std::string to_utf8(const wchar_t* buffer, int len)
-{
-	int nChars = ::WideCharToMultiByte(
-		CP_UTF8,
-		0,
-		buffer,
-		len,
-		NULL,
-		0,
-		NULL,
-		NULL);
-	if (nChars == 0) return "";
-
-	string newbuffer;
-	newbuffer.resize(nChars);
-	::WideCharToMultiByte(
-		CP_UTF8,
-		0,
-		buffer,
-		len,
-		const_cast< char* >(newbuffer.c_str()),
-		nChars,
-		NULL,
-		NULL);
-
-	return newbuffer;
-}
-
 int wctcmp(vector <wchar_t> a, wchar_t *b)
 {
 	for (int i = 0; i < min(a.size(), wcslen(b)); i++)

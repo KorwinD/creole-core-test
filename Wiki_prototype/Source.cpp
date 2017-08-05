@@ -72,13 +72,9 @@ void main()
 			}
 
 		}
-		//wchar_t* buf = &utf16line[0];
-		//cout << Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict) << endl;
 	}
 	
-	
-	//str = Creole::gString::St_string(std::string("\n"), 0, 0, &sec);
-	//cout << str << endl;
+
 	cout << endl;
 	system("pause");
 }
