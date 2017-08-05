@@ -63,9 +63,14 @@ void main()
 		}
 		else
 		{
+
 			auto out = Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict);
-			wchar_t* buf = &out[0];
-			file1 << to_utf8_(buf, out.size()) << endl;
+			if (out.size())
+			{
+				wchar_t* buf = &out[0];
+				file1 << to_utf8_(buf, out.size()) << endl;
+			}
+
 		}
 		//wchar_t* buf = &utf16line[0];
 		//cout << Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict) << endl;

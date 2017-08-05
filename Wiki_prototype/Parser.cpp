@@ -492,11 +492,6 @@ namespace Creole
 		int seqlen = 0;
 		auto suspect = wchar_t('a');
 		vector <wchar_t> new_str;
-		if (!dict["section"])
-		{
-			insert(new_str, 0, L"<p>\n", 4);
-			dict["section"] = 1;
-		}
 
 		auto it = utfbuf.begin();
 
@@ -504,11 +499,17 @@ namespace Creole
 		{
 			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')))
 			{
-				section_end(new_str, dict);
+				if (dict["section"]) section_end(new_str, dict);
+				//else new_str.push_back(wchar_t('\n'));
 				int mode = 0;
 			}
 			else
 			{
+				if (!dict["section"])
+				{
+					insert(new_str, 0, L"<p>\n", 4);
+					dict["section"] = 1;
+				}
 				auto mode = mode_def(dict);
 				if (mode == 0)
 				{
@@ -522,7 +523,6 @@ namespace Creole
 
 			it++;
 		}
-		
 
 		return new_str;
 	}
