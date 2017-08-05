@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include "utf8.h"
+
 namespace Creole
 {
 	class gString

@@ -1,8 +1,10 @@
 #include "Header.h"
 #include <stdexcept>
 #include <ctype.h>
-#include <windows.h>
+
 #pragma warning(disable : 4996)
+
+#define min(a,b) (((a) < (b)) ? (a) : (b))
 
 using namespace std;
 
@@ -124,7 +126,7 @@ void section_end(vector <wchar_t> &str, map <string, int> &dict)
 			dict["cursive"] = 0;
 		}
 	}
-	insert(str, 0, L"</p>", 4);
+	if (dict["section"]) insert(str, 0, L"</p>", 4);
 	dict["section"] = 0;
 }
 
@@ -444,6 +446,7 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 			if (i == allowed_symbols.end())
 			{
 				link_end(str, word, dict);
+				str.push_back(*it);
 				break;
 			}
 
@@ -558,5 +561,12 @@ namespace Creole
 		word1.clear();
 		word2.clear();
 		return new_str;
+	}
+
+	std::vector <wchar_t> gString::End_file(std::map <std::string, int> &dict)
+	{
+		vector <wchar_t> v;
+		section_end(v, dict);
+		return v;
 	}
 }

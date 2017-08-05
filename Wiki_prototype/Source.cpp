@@ -74,6 +74,15 @@ void main()
 
 		}
 	}
+	auto out = Creole::gString::End_file(dict);
+	if (out.size())
+	{
+		wchar_t* buf = &out[0];
+		file1 << to_utf8_(buf, out.size()) << endl;
+	}
+
+	file1.close();
+	file.close();
 	
 
 	cout << endl;
