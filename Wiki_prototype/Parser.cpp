@@ -124,6 +124,11 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 	}
 }
 
+void section_end(vector <wchar_t> &str, map <string, int> &dict)
+{
+	
+}
+
 void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
 {
 	//cout << seqlen << endl;
@@ -168,7 +173,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				if (dict["cursive"])
 				{
 					dict["cursive"] = 0;
-					insert(str, 0, L"<em/>", 5);
+					insert(str, 0, L"</em>", 5);
 				}
 				else
 				{
@@ -178,6 +183,39 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				seqlen -= 2;
 				it -= 1;
 				suspect = *it;
+			}
+			break;
+		}
+		case wchar_t('*') :
+		{
+			if (((seqlen != 2) && (dist == seqlen)) || ((seqlen == 2) && (dist == seqlen) && (dict["n_lvl"])))
+			{
+				//TODO Lists
+			}
+			else//bold
+			{
+				if (seqlen == 1)
+				{
+					str.push_back(wchar_t('*'));
+					seqlen = 0;
+					suspect = *it;
+				}
+				else
+				{
+					if (dict["bold"])
+					{
+						dict["bold"] = 0;
+						insert(str, 0, L"</strong>", 9);
+					}
+					else
+					{
+						dict["bold"] = 1;
+						insert(str, 0, L"<strong>", 8);
+					}
+					seqlen -= 2;
+					it -= 1;
+					suspect = *it;
+				}
 			}
 			break;
 		}
