@@ -18,7 +18,7 @@ vector <wchar_t *> protocols =
 
 vector <wchar_t> allowed_symbols = 
 {
-	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */}
+	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */} //TODO add treatment of final letter in free link 
 };
 
 vector <wchar_t> punctuation =
@@ -44,25 +44,12 @@ void insert(vector <wchar_t> &str, int shift, wchar_t *add, int len)
 	}
 }
 
-void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)
+void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)//error in main part of link
 {
 	insert(str, 0, L"[[", 2);
 	if (word.size()) insert(str, 0, &word[0], word.size());
 	word.clear();
 	dict["mlink"] = 0;
-
-	/*
-	new_str.push_back(wchar_t('['));
-	new_str.push_back(wchar_t('['));
-	if (dict["link"] == 2)
-	{
-		for (int i = 0; i < word.size(); i++)
-		{
-			new_str.push_back(word[i]);
-		}
-	}
-	dict["link"] = 0;
-	*/
 }
 
 void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
@@ -255,6 +242,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			if (seqlen == 2)
 			{
 				word.clear();
+				seqlen = 0;
 				dict["mlink"] = 1;
 				it--;
 			}
@@ -511,9 +499,21 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 
 }
 
-void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word)
+void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word, int &seqlen)
 {
 	if (*it == wchar_t('\n')) link_error(str, word, dict);
+	else if (*it == wchar_t(']')) seqlen++;
+
+	if (seqlen == 2)
+	{
+		word.erase(word.end() - 2, word.end());
+		insert(str, 0, L"<a href=", 8);
+		str.push_back(wchar_t('"'));
+		link_end(str, word, dict);
+
+		seqlen = 0;
+		dict["mlink"] = 0;
+	}
 }
 
 void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
@@ -599,7 +599,6 @@ namespace Creole
 				}
 
 				auto mode = mode_def(dict);
-
 				if (mode == 0)
 				{
 					filling(word1, mode, it, new_str);
@@ -612,7 +611,7 @@ namespace Creole
 				else if (mode == 2)
 				{
 					filling(word1, mode, it, new_str);
-					mainlink_parsing_mode(new_str, it, dict, word1);
+					mainlink_parsing_mode(new_str, it, dict, word1, seqlen);
 				}
 				else if (mode == 6)
 				{
