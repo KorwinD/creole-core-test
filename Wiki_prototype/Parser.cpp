@@ -126,7 +126,30 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 
 void section_end(vector <wchar_t> &str, map <string, int> &dict)
 {
-	
+	if (dict["cursive"] > dict["bold"])
+	{
+		insert(str, 0, L"</em>", 5);
+		dict["cursive"] = 0;
+
+		if (dict["bold"])
+		{
+			insert(str, 0, L"</strong>", 9);
+			dict["bold"] = 0;
+		}
+	}
+	else if (dict["cursive"] < dict["bold"])
+	{
+		insert(str, 0, L"</strong>", 9);
+		dict["bold"] = 0;
+
+		if (dict["cursive"])
+		{
+			insert(str, 0, L"</em>", 5);
+			dict["cursive"] = 0;
+		}
+	}
+	insert(str, 0, L"</p>", 4);
+	dict["section"] = 0;
 }
 
 void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
@@ -177,7 +200,14 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				}
 				else
 				{
-					dict["cursive"] = 1;
+					if (dict["bold"])
+					{
+						dict["cursive"] = 1;
+					}
+					else
+					{
+						dict["cursive"] = 2;
+					}
 					insert(str, 0, L"<em>", 4);
 				}
 				seqlen -= 2;
@@ -209,7 +239,14 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					}
 					else
 					{
-						dict["bold"] = 1;
+						if (dict["cursive"])
+						{
+							dict["bold"] = 1;
+						}
+						else
+						{
+							dict["bold"] = 2;
+						}
 						insert(str, 0, L"<strong>", 8);
 					}
 					seqlen -= 2;
@@ -443,7 +480,7 @@ int mode_def(map <string, int> &dict)
 	//7 — inline nowiki parsing mode(monospace)
 	//8 — preformatted nowiki mode
 
-	if (dict["header"] > 0) return 5;
+	if (dict["header"]) return 5;
 
 	return 0;
 }
@@ -460,21 +497,30 @@ namespace Creole
 			insert(new_str, 0, L"<p>\n", 4);
 			dict["section"] = 1;
 		}
+
 		auto it = utfbuf.begin();
 
 		while (it != utfbuf.end())
 		{
-			auto mode = mode_def(dict);
-			if (mode == 0)
+			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')))
 			{
-				no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+				section_end(new_str, dict);
+				int mode = 0;
 			}
-			else if (mode == 5)
+			else
 			{
-				header_parsing_mode(new_str, it, suspect, seqlen, dict);
+				auto mode = mode_def(dict);
+				if (mode == 0)
+				{
+					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+				}
+				else if (mode == 5)
+				{
+					header_parsing_mode(new_str, it, suspect, seqlen, dict);
+				}
 			}
 
-				it++;
+			it++;
 		}
 		
 
