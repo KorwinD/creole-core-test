@@ -97,26 +97,22 @@ void free_stand_link(vector <wchar_t> &word, vector <wchar_t> &new_str, map <str
 
 void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)
 {
-	if (word.size() == 0)
-	{
-		//str.push_back(wchar_t(':'));
-	}
-	else
+	if (word.size() != 0)
 	{
 		auto i = protocols.begin();
 
 		for (i; ; i++)
 		{
+
 			if (i == protocols.end())
 			{
-				//str.push_back(wchar_t(':'));
 				word.clear();
 				break;
 			}
-			else
+			if (wctcmp(word, *i) == 0)
 			{
 				str.push_back(wchar_t('@'));
-				dict[""] = 1;
+				dict["flink"] = 1;
 				break;
 			}
 		}
