@@ -35,10 +35,10 @@ string to_utf8_(const wchar_t* buffer, int len)
 
 void main()
 {
-	char *filename = "new.creole";	
+	char *filename = "tests//new.creole";	
 	string str;
 	ifstream file(filename);
-	ofstream file1("Text1.txt");
+	ofstream file1("tests//new.html");
 	unsigned line_count = 1;
 
 	while (getline(file, str))
