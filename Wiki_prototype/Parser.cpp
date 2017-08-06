@@ -60,11 +60,14 @@ void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int>
 
 void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
 {
+
 	insert(new_str, 0, &word[0], word.size());
 	new_str.push_back(wchar_t('"'));
 	new_str.push_back(wchar_t('>'));
 	insert(new_str, 0, &word[0], word.size());
 	insert(new_str, 0, L"</a>", 4);
+	
+	
 	dict["flink"] = 0;
 }
 
@@ -87,7 +90,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 				str.erase(str.end() - word.size(), str.end());
 				insert(str, 0, L"<a href=", 8);
 				str.insert(str.end(), wchar_t('"'));
-				dict["flink"] = 1;
+				if (!dict["mlink"]) dict["flink"] = 1;
 				break;
 			}
 		}
@@ -106,7 +109,30 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 				insert(word, 0, j->second, wcslen(j->second));
 				insert(str, 0, L"<a href=", 8);
 				str.insert(str.end(), wchar_t('"'));
-				dict["flink"] = 1;
+				if (!dict["mlink"]) dict["flink"] = 1;
+				break;
+			}
+		}
+	}
+}
+
+void link_identification(vector <wchar_t> &word)
+{
+	auto _word = word;
+	if (word.size() != 0)
+	{
+		auto j = wikies.begin();
+		
+		for (j; ; j++)
+		{
+			if (j == wikies.end())
+			{
+				break;
+			}
+			if (wctcmp(word, j->first) == 0)
+			{
+				word.clear();
+				insert(word, 0, j->second, wcslen(j->second));
 				break;
 			}
 		}
@@ -528,13 +554,24 @@ void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 {
 	if (*it == wchar_t('\n')) link_error(str, word, dict);
 	else if (*it == wchar_t(']')) seqlen++;
+	else if (*it == wchar_t(':'))
+	{
+		link_identification(word);
+	}
 
 	if (seqlen == 2)
 	{
 		word.erase(word.end() - 2, word.end());
-		insert(str, 0, L"<a href=", 8);
-		str.push_back(wchar_t('"'));
-		link_end(str, word, dict);
+		if (word.size())
+		{
+			insert(str, 0, L"<a href=", 8);
+			str.push_back(wchar_t('"'));
+			link_end(str, word, dict);
+		}
+		else
+		{
+			insert(str, 0, L"[[]]", 4);
+		}
 
 		seqlen = 0;
 		dict["mlink"] = 0;
