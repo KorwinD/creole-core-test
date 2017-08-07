@@ -18,7 +18,7 @@ vector <wchar_t *> protocols =
 
 map <wchar_t *, wchar_t *> wikies = 
 {
-	{L"main:", L"tests/"}, //TODO Fix in future
+	{L"main:", L"tests/"}, //TODO Add Internal links in future
 	{L"Wikipedia:", L"https://en.wikipedia.org/wiki/"},
 };
 
@@ -106,7 +106,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 
 			if (i == protocols.end())
 			{
-				return;
+				break;
 			}
 
 			if (wctcmp(word, *i) == 0)
@@ -115,7 +115,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 				insert(str, 0, L"<a href=", 8);
 				str.insert(str.end(), wchar_t('"'));
 				if (!dict["mlink"]) dict["flink"] = 1;
-				break;
+				return;
 			}
 		}
 
@@ -123,7 +123,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 		{
 			if (j == wikies.end())
 			{
-				break;
+				return;
 			}
 			if (wctcmp(word, j->first) == 0)
 			{
@@ -133,7 +133,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 				insert(str, 0, L"<a href=", 8);
 				str.insert(str.end(), wchar_t('"'));
 				if (!dict["mlink"]) dict["flink"] = 1;
-				break;
+				return;
 			}
 		}
 	}
@@ -141,10 +141,25 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 
 bool link_identification(vector <wchar_t> &word)
 {
-	auto _word = word;
+
+
 	if (word.size() != 0)
 	{
+		auto i = protocols.begin();
 		auto j = wikies.begin();
+		for (i; ; i++)
+		{
+
+			if (i == protocols.end())
+			{
+				break;
+			}
+
+			if (wctcmp(word, *i) == 0)
+			{
+				return true;
+			}
+		}
 		
 		for (j; ; j++)
 		{
@@ -154,8 +169,9 @@ bool link_identification(vector <wchar_t> &word)
 			}
 			if (wctcmp(word, j->first) == 0)
 			{
-				word.clear();
 				insert(word, 0, j->second, wcslen(j->second));
+				word.clear();
+				
 				return true;
 			}
 		}
@@ -608,7 +624,8 @@ void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 		{
 			insert(str, 0, L"<a href=", 8);
 			str.push_back(wchar_t('"'));
-			if (!foundation) insert(str, 0, L"https://", 8);
+			auto u = wikies.begin(); // I don't know why wikies[L"main"] doesn't work.
+			if (!foundation) insert(str, 0, u->second, wcslen(u->second));
 			link_end(str, word, dict);
 		}
 		else
@@ -633,7 +650,8 @@ void captionlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &
 		{
 			insert(str, 0, L"<a href=", 8);
 			str.push_back(wchar_t('"'));
-			if (!foundation) insert(str, 0, L"https://", 8);
+			auto u = wikies.begin(); // I don't know why wikies[L"main"] doesn't work.
+			if (!foundation) insert(str, 0, u->second, wcslen(u->second));
 			link_end(str, word1, word2, dict);
 		}
 		else
