@@ -169,9 +169,8 @@ bool link_identification(vector <wchar_t> &word)
 			}
 			if (wctcmp(word, j->first) == 0)
 			{
-				insert(word, 0, j->second, wcslen(j->second));
 				word.clear();
-				
+				insert(word, 0, j->second, wcslen(j->second));
 				return true;
 			}
 		}

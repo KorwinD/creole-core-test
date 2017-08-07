@@ -1,1 +1,4 @@
-﻿[[https://g]]
+﻿https://www.google.com/, \\ http://coub.com \\
+[[Internal|link]], \\
+[[Wikipedia:Bible|Book full of wisdom]]
+Wikipedia:Bible
