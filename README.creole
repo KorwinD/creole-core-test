@@ -2,7 +2,7 @@
 Simple parser of .creole files into .html.
 
 == What is done
-* Bold and Italics#
+* Bold and Italics
 * Headings
 * Line breaks
 * Links
