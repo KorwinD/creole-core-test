@@ -58,6 +58,17 @@ void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int>
 	dict["mlink"] = 0;
 }
 
+void link_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)//error in second part of link
+{
+	insert(str, 0, L"[[", 2);
+	insert(str, 0, &word1[0], word1.size());
+	word1.clear();
+	str.push_back(wchar_t('|'));
+	insert(str, 0, &word2[0], word2.size());
+	word2.clear();
+	dict["slink"] = 0;
+}
+
 void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
 {
 
@@ -68,6 +79,19 @@ void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int
 	insert(new_str, 0, L"</a>", 4);
 	
 	
+	dict["flink"] = 0;
+}
+
+void link_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)
+{
+
+	insert(new_str, 0, &word1[0], word1.size());
+	new_str.push_back(wchar_t('"'));
+	new_str.push_back(wchar_t('>'));
+	insert(new_str, 0, &word2[0], word2.size());
+	insert(new_str, 0, L"</a>", 4);
+
+
 	dict["flink"] = 0;
 }
 
@@ -116,7 +140,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 	}
 }
 
-void link_identification(vector <wchar_t> &word)
+bool link_identification(vector <wchar_t> &word)
 {
 	auto _word = word;
 	if (word.size() != 0)
@@ -127,16 +151,17 @@ void link_identification(vector <wchar_t> &word)
 		{
 			if (j == wikies.end())
 			{
-				break;
+				return false;
 			}
 			if (wctcmp(word, j->first) == 0)
 			{
 				word.clear();
 				insert(word, 0, j->second, wcslen(j->second));
-				break;
+				return true;
 			}
 		}
 	}
+	return false;
 }
 
 void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, vector <wchar_t> str)
@@ -151,6 +176,10 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 		}
 	}
 	else if (mode == 2)
+	{
+		word.push_back(*it);
+	}
+	else if (mode == 3)
 	{
 		word.push_back(*it);
 	}
@@ -553,10 +582,24 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word, int &seqlen, bool &foundation)
 {
 	if (*it == wchar_t('\n')) link_error(str, word, dict);
+	else if (*it == wchar_t('|'))
+	{
+		if (word.size())
+		{
+			word.erase(word.end() - 1, word.end());
+			dict["slink"] = 1;
+			dict["mlink"] = 0;
+			seqlen = 0;
+		}
+		else
+		{
+			insert(str, 0, L"[[", 2);
+		}
+	}
 	else if (*it == wchar_t(']')) seqlen++;
 	else if (*it == wchar_t(':'))
 	{
-		link_identification(word);
+		foundation = link_identification(word);
 	}
 
 	if (seqlen == 2)
@@ -566,6 +609,7 @@ void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 		{
 			insert(str, 0, L"<a href=", 8);
 			str.push_back(wchar_t('"'));
+			if (!foundation) insert(str, 0, L"https://", 8);
 			link_end(str, word, dict);
 		}
 		else
@@ -575,6 +619,31 @@ void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 
 		seqlen = 0;
 		dict["mlink"] = 0;
+	}
+}
+
+void captionlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word1, vector <wchar_t> &word2, int &seqlen, bool &foundation)
+{
+	if (*it == wchar_t('\n')) link_error(str, word1, word2, dict);
+	else if (*it == wchar_t(']')) seqlen++;
+
+	if (seqlen == 2)
+	{
+		word2.erase(word2.end() - 2, word2.end());
+		if (word2.size())
+		{
+			insert(str, 0, L"<a href=", 8);
+			str.push_back(wchar_t('"'));
+			if (!foundation) insert(str, 0, L"https://", 8);
+			link_end(str, word1, word2, dict);
+		}
+		else
+		{
+			link_end(str, word1, dict);
+		}
+
+		seqlen = 0;
+		dict["slink"] = 0;
 	}
 }
 
@@ -625,11 +694,13 @@ int mode_def(map <string, int> &dict)
 	//8 — inline nowiki parsing mode(monospace)
 	//9 — preformatted nowiki mode
 
-	if (dict["header"]) return 6;
-
 	if (dict["flink"]) return 1;
 
 	if (dict["mlink"]) return 2;
+
+	if (dict["slink"]) return 3;
+
+	if (dict["header"]) return 6;
 
 	return 0;
 }
@@ -674,6 +745,11 @@ namespace Creole
 				{
 					filling(word1, mode, it, new_str);
 					mainlink_parsing_mode(new_str, it, dict, word1, seqlen, foundation);
+				}
+				else if (mode == 3)
+				{
+					filling(word2, mode, it, new_str);
+					captionlink_parsing_mode(new_str, it, dict, word1, word2, seqlen, foundation);
 				}
 				else if (mode == 6)
 				{

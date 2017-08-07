@@ -13,6 +13,7 @@ std::map <std::string, int> dict =
 	{"cursive", 0},
 	{"header", 0},
 	{"flink", 0},
-	{"mlink", 0}
+	{"mlink", 0},
+	{"slink", 0}
 	//{""}
 };
