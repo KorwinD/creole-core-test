@@ -115,7 +115,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 				insert(str, 0, L"<a href=", 8);
 				str.insert(str.end(), wchar_t('"'));
 				if (!dict["mlink"]) dict["flink"] = 1;
-				return;
+				break;
 			}
 		}
 
