@@ -18,7 +18,7 @@ vector <wchar_t *> protocols =
 
 map <wchar_t *, wchar_t *> wikies = 
 {
-	{L"main:", L"tests/"}, //TODO Add Internal links in future
+	{L"main:", L"tests/"},
 	{L"Wikipedia:", L"https://en.wikipedia.org/wiki/"},
 };
 
@@ -31,6 +31,43 @@ vector <wchar_t> punctuation =
 {
 	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
 };
+
+void clearing_forward(vector <wchar_t> &str)
+{
+	auto i = str.begin();
+
+	while ((i != str.end()) && (*i == wchar_t(' ')))
+	{
+		i++;
+	}
+	str.erase(str.begin(), i);
+}
+
+void clearing_backward(vector <wchar_t> &str)
+{
+	auto i = str.end() - 2;
+	while ((i != str.begin()) && (*i == wchar_t(' ')))
+	{
+		cout << "get" << endl;
+		i--;
+	}
+	str.erase(i+1, str.end() - 1);
+}
+
+void clearing(vector <wchar_t> &str, int type)
+{
+	if (type == 0) clearing_forward(str);
+	else if (type == 1) clearing_backward(str);
+	else if (type == 2)
+	{
+		clearing_forward(str);
+		clearing_backward(str);
+	}
+	else
+	{
+		//TODO Erorrs.
+	}
+}
 
 int wctcmp(vector <wchar_t> a, wchar_t *b)
 {
@@ -729,8 +766,8 @@ namespace Creole
 		auto suspect = wchar_t('a');
 		vector <wchar_t> new_str, word1, word2;
 		bool foundation = false;
+		if (mode_def(dict) == 0) clearing(utfbuf, 2);
 		auto it = utfbuf.begin();
-
 		while (it != utfbuf.end())
 		{
 			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')))
