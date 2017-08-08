@@ -14,6 +14,7 @@ std::map <std::string, int> dict =
 	{"header", 0},
 	{"flink", 0},
 	{"mlink", 0},
-	{"slink", 0}
+	{"slink", 0},
+	{"tilde", 0}
 	//{""}
 };

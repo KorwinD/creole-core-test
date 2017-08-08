@@ -48,7 +48,6 @@ void clearing_backward(vector <wchar_t> &str)
 	auto i = str.end() - 2;
 	while ((i != str.begin()) && (*i == wchar_t(' ')))
 	{
-		cout << "get" << endl;
 		i--;
 	}
 	str.erase(i+1, str.end() - 1);
@@ -385,6 +384,23 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			}
 			break;
 		}
+		case wchar_t('~') :
+		{
+			if (seqlen == 1)
+			{
+				word.clear();
+				seqlen = 0;
+				dict["tilde"] = 1;
+
+			}
+			else
+			{
+				for (int j = 0; j < seqlen; j++) str.push_back('~');
+				seqlen = 0;
+				suspect = *it;
+			}
+			break;
+		}
 		case wchar_t('=') :
 		{
 			if (seqlen > 6)
@@ -435,6 +451,26 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 		{
 			//syntax symbols
 			case wchar_t('=') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist, word);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('~') :
 			{
 				if (*it == suspect)
 				{
@@ -734,6 +770,19 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 	}
 }
 
+void tilde_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict)
+{
+	if ((*it == wchar_t(' ')) || (*it == wchar_t('\n')))
+	{
+		str.push_back(*it);
+		dict["tilde"] = 0;
+	}
+	else
+	{
+		str.push_back(*it);
+	}
+}
+
 int mode_def(map <string, int> &dict)
 {
 	//0 — standart parsing mode
@@ -743,7 +792,7 @@ int mode_def(map <string, int> &dict)
 	//4 — image without caption({{image.png}}), main part of image({{image.png|image}}) parsing mode
 	//5 — caption part of image({{image.png|image}}) parsing mode
 	//6 — header parsing mode
-	//7 — tilda(~) parsing mode
+	//7 — tilde(~) parsing mode
 	//8 — inline nowiki parsing mode(monospace)
 	//9 — preformatted nowiki mode
 
@@ -754,6 +803,8 @@ int mode_def(map <string, int> &dict)
 	if (dict["slink"]) return 3;
 
 	if (dict["header"]) return 6;
+
+	if (dict["tilde"]) return 7;
 
 	return 0;
 }
@@ -807,6 +858,10 @@ namespace Creole
 				else if (mode == 6)
 				{
 					header_parsing_mode(new_str, it, suspect, seqlen, dict);
+				}
+				else if (mode == 7)
+				{
+					tilde_parsing_mode(new_str, it, dict);
 				}
 			}
 			it++;
