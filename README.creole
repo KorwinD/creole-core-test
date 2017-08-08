@@ -1,6 +1,8 @@
 = Creole-core
 Simple parser of .creole files into .html.
 
+~http://google.com/
+
 == What is done
 * Bold and Italics
 * Headings
