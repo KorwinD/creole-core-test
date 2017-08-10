@@ -10,3 +10,4 @@ Simple parser of .creole files into .html.
 ** Internal links
 ** External links
 ** Interwiki links
+* Escape character
