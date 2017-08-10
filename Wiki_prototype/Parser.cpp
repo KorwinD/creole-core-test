@@ -294,6 +294,18 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			}
 			break;
 		}
+		case wchar_t('-') :
+		{
+			if ((seqlen == 4) && (*it == wchar_t('\n')))
+			{
+				insert(str, 0, L"<hr/>", 5);
+			}
+			else
+			{
+				for (int j = 0; j < seqlen; j++) str.push_back('-');
+			}
+			break;
+		}
 		case wchar_t('/') :
 		{
 			if (seqlen == 1)
@@ -471,6 +483,26 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				break;
 			}
 			case wchar_t('~') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist, word);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('-') :
 			{
 				if (*it == suspect)
 				{
