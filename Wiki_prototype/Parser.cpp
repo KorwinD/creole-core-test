@@ -45,6 +45,7 @@ void clearing_forward(vector <wchar_t> &str)
 
 void clearing_backward(vector <wchar_t> &str)
 {
+	if (str.size() == 1) return;
 	auto i = str.end() - 2;
 	while ((i != str.begin()) && (*i == wchar_t(' ')))
 	{
@@ -59,8 +60,8 @@ void clearing(vector <wchar_t> &str, int type)
 	else if (type == 1) clearing_backward(str);
 	else if (type == 2)
 	{
-		clearing_forward(str);
 		clearing_backward(str);
+		clearing_forward(str);
 	}
 	else
 	{
@@ -84,6 +85,11 @@ void insert(vector <wchar_t> &str, int shift, wchar_t *add, int len)
 	{
 		str.insert(str.end() - shift, add[i]);
 	}
+}
+
+void list_item_end(vector <wchar_t> &str, map <string, int> &dict)
+{
+	if (dict["n_lvl"]) insert(str, 0, L"</li>", 5);
 }
 
 void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)//error in main part of link
@@ -259,6 +265,16 @@ void section_end(vector <wchar_t> &str, map <string, int> &dict)
 			dict["cursive"] = 0;
 		}
 	}
+
+	//TODO List end
+	if (dict["n_lvl"])
+	{
+		for (int h = 0; h < dict["n_lvl"]; h++) insert(str, 0, L"</ul>\n", 6);
+		dict["n_lvl"] = 0;
+	}
+	dict["n_lvl"] = 0;
+	dict["u_lvl"] = 0;
+
 	if (dict["section"]) insert(str, 0, L"</p>", 4);
 	dict["section"] = 0;
 }
@@ -341,41 +357,59 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 		}
 		case wchar_t('*') :
 		{
-			if (((seqlen != 2) && (dist == seqlen)) || ((seqlen == 2) && (dist == seqlen) && (dict["n_lvl"])))
+			if ((seqlen == dist) && ((dict["n_lvl"] && (dist == 2)) || (dist != 2)))
 			{
-				//TODO Lists
-			}
-			else//bold
-			{
-				if (seqlen == 1)
+				if (seqlen > dict["n_lvl"])
 				{
-					str.push_back(wchar_t('*'));
-					seqlen = 0;
-					suspect = *it;
+					for (int h = 0; h < (seqlen - dict["n_lvl"]); h++)
+					{
+						insert(str, 0, L"<ul>\n", 5);
+					}
+				}
+				else if (seqlen < dict["n_lvl"])
+				{
+					for (int h = 0; h < (dict["n_lvl"] - seqlen); h++)
+					{
+						insert(str, 0, L"</ul>\n", 6);
+					}
+				}
+				insert(str, 0, L"<li>", 4);
+
+				dict["n_lvl"] = seqlen;
+				suspect = *it;
+				seqlen = 0;
+				return;
+			}
+			//TODO lists
+
+			if (seqlen == 1)
+			{
+				str.push_back(wchar_t('*'));
+				seqlen = 0;
+				suspect = *it;
+			}
+			else
+			{
+				if (dict["bold"])
+				{
+					dict["bold"] = 0;
+					insert(str, 0, L"</strong>", 9);
 				}
 				else
 				{
-					if (dict["bold"])
+					if (dict["cursive"])
 					{
-						dict["bold"] = 0;
-						insert(str, 0, L"</strong>", 9);
+						dict["bold"] = 1;
 					}
 					else
 					{
-						if (dict["cursive"])
-						{
-							dict["bold"] = 1;
-						}
-						else
-						{
-							dict["bold"] = 2;
-						}
-						insert(str, 0, L"<strong>", 8);
+						dict["bold"] = 2;
 					}
-					seqlen -= 2;
-					it -= 1;
-					suspect = *it;
+					insert(str, 0, L"<strong>", 8);
 				}
+				seqlen -= 2;
+				it -= 1;
+				suspect = *it;
 			}
 			break;
 		}
@@ -622,34 +656,17 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				}
 				break;
 			}
-			case wchar_t(' ') :
-			{
-				if (seqlen > 0)
-				{
-					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist, word);
-					if (hlp == it)
-					{
-						str.push_back(*it);
-					}
-				}
-				else
-				{
-					str.push_back(*it);
-				}
-				break;
-			}
 			case wchar_t('\n') :
 			{
 				if (seqlen > 0)
 				{
 					auto hlp = it;
 					changing(str, it, suspect, seqlen, dict, dist, word);
-					if (hlp == it) str.push_back(*it);
+					if (hlp == it) list_item_end(str, dict);
 				}
 				else
 				{
-					//str.push_back(*it);
+					list_item_end(str, dict);
 				}
 				break;
 			}
