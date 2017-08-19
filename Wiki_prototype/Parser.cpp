@@ -241,6 +241,16 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 	}
 }
 
+void marked_list_end(vector <wchar_t> &str, map <string, int> &dict)
+{
+	if (dict["n_lvl"])
+	{
+		for (int h = 0; h < dict["n_lvl"]; h++) insert(str, 0, L"</ul>\n", 6);
+		dict["n_lvl"] = 0;
+	}
+	dict["n_lvl"] = 0;
+}
+
 void section_end(vector <wchar_t> &str, map <string, int> &dict)
 {
 	if (dict["cursive"] > dict["bold"])
@@ -266,13 +276,9 @@ void section_end(vector <wchar_t> &str, map <string, int> &dict)
 		}
 	}
 
-	//TODO List end
-	if (dict["n_lvl"])
-	{
-		for (int h = 0; h < dict["n_lvl"]; h++) insert(str, 0, L"</ul>\n", 6);
-		dict["n_lvl"] = 0;
-	}
-	dict["n_lvl"] = 0;
+	marked_list_end(str, dict);
+	
+	//TODO lists
 	dict["u_lvl"] = 0;
 
 	if (dict["section"]) insert(str, 0, L"</p>", 4);
@@ -478,6 +484,11 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 
 void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word)
 {
+	if ((dist == 0) && (dict["n_lvl"]) && (*it != wchar_t('*')))
+	{
+		marked_list_end(str, dict);
+	}
+
 	if (iswalpha(*it) || iswalnum(*it))
 	{
 		if (seqlen > 0)

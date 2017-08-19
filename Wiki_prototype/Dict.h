@@ -8,6 +8,7 @@ std::map <std::string, int> dict =
 	{"section", 0},
 	{"u_lvl", 0},
 	{"n_lvl", 0},
+	{"list", 0},
 	{"nowiki", 0},
 	{"bold", 0},
 	{"cursive", 0},
