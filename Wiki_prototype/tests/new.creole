@@ -1,11 +1,3 @@
-﻿*sdffsd
-**qqq
-***fff
-**fdd
-*gggg
-**bbb
-***hhh
-**kk
-*jj
-*i
-asd
+﻿*j
+##i
+*f

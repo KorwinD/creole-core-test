@@ -57,7 +57,7 @@ void main()
 		if (utf16line[0] == wchar_t(65279))
 		{
 			utf16line.erase(utf16line.begin());
-			auto out = Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict);
+			auto out = Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict, list);
 			out.insert(out.begin(), wchar_t(65279));
 			wchar_t* buf = &out[0];
 			file1 << to_utf8_(buf, out.size()) << endl;
@@ -65,7 +65,7 @@ void main()
 		else
 		{
 
-			auto out = Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict);
+			auto out = Creole::gString::St_string(vector<wchar_t>(utf16line.begin(), utf16line.end()), dict, list);
 			if (out.size())
 			{
 				wchar_t* buf = &out[0];
@@ -74,7 +74,7 @@ void main()
 
 		}
 	}
-	auto out = Creole::gString::End_file(dict);
+	auto out = Creole::gString::End_file(dict, list);
 	if (out.size())
 	{
 		wchar_t* buf = &out[0];

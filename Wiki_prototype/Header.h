@@ -12,8 +12,8 @@ namespace Creole
 	{
 	public:
 		//standart string
-		static std::vector <wchar_t> St_string(std::vector <wchar_t> utfbuf, std::map <std::string, int> &dict);
+		static std::vector <wchar_t> St_string(std::vector <wchar_t> utfbuf, std::map <std::string, int> &dict, std::vector <int> &list);
 
-		static std::vector <wchar_t> End_file(std::map <std::string, int> &dict);
+		static std::vector <wchar_t> End_file(std::map <std::string, int> &dict, std::vector <int> &list);
 	};
 }

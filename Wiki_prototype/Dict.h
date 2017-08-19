@@ -6,7 +6,7 @@
 std::map <std::string, int> dict = 
 {
 	{"section", 0},
-	{"u_lvl", 0},
+	{"list_type", 0},
 	{"n_lvl", 0},
 	{"list", 0},
 	{"nowiki", 0},
@@ -19,3 +19,5 @@ std::map <std::string, int> dict =
 	{"tilde", 0}
 	//{""}
 };
+
+std::vector <int> list;

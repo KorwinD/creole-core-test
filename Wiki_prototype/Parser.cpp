@@ -1,6 +1,7 @@
 #include "Header.h"
 #include <stdexcept>
 #include <ctype.h>
+#include <list>
 
 #pragma warning(disable : 4996)
 
@@ -24,12 +25,12 @@ map <wchar_t *, wchar_t *> wikies =
 
 vector <wchar_t> allowed_symbols = 
 {
-	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */} //TODO add treatment of final letter in free link 
+	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */}
 };
 
 vector <wchar_t> punctuation =
 {
-	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
+	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ } //TODO add treatment of final letter in free link 
 };
 
 void clearing_forward(vector <wchar_t> &str)
@@ -241,17 +242,20 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 	}
 }
 
-void marked_list_end(vector <wchar_t> &str, map <string, int> &dict)
+void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
-	if (dict["n_lvl"])
+	int h = 0;
+	cout << list.size() << " " << dict["n_lvl"] << endl;
+	for (h; h < (dict["n_lvl"]); h++)
 	{
-		for (int h = 0; h < dict["n_lvl"]; h++) insert(str, 0, L"</ul>\n", 6);
-		dict["n_lvl"] = 0;
+		if (list[list.size() - 1 - h] == 0) insert(str, 0, L"</ul>\n", 6);
+		if (list[list.size() - 1 - h] == 1) insert(str, 0, L"</ol>\n", 6);
 	}
+	list.clear();
 	dict["n_lvl"] = 0;
 }
 
-void section_end(vector <wchar_t> &str, map <string, int> &dict)
+void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
 	if (dict["cursive"] > dict["bold"])
 	{
@@ -276,7 +280,7 @@ void section_end(vector <wchar_t> &str, map <string, int> &dict)
 		}
 	}
 
-	marked_list_end(str, dict);
+	list_end(str, dict, list);
 	
 	//TODO lists
 	dict["u_lvl"] = 0;
@@ -295,7 +299,7 @@ void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <strin
 	dict["header"] = 0;
 }
 
-void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word)
+void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word, vector <int> &list)
 {
 	switch (suspect)
 	{
@@ -361,8 +365,39 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			}
 			break;
 		}
+		case wchar_t('#') :
+		{
+			if (seqlen == dist)
+			{
+				if (seqlen > dict["n_lvl"])
+				{
+					for (int h = 0; h < (seqlen - dict["n_lvl"]); h++)
+					{
+						insert(str, 0, L"<ol>\n", 5);
+						list.push_back(1);
+					}
+				}
+				else if (seqlen < dict["n_lvl"])
+				{
+					int h = 0;
+					for (h; h < (dict["n_lvl"] - seqlen); h++)
+					{
+						if (list[list.size() - 1 - h] == 0) insert(str, 0, L"</ul>\n", 6);
+						if (list[list.size() - 1 - h] == 1) insert(str, 0, L"</ol>\n", 6);
+					}
+					list.erase(list.end() - h, list.end());
+				}
+				insert(str, 0, L"<li>", 4);
+
+				dict["n_lvl"] = seqlen;
+				suspect = *it;
+				seqlen = 0;
+			}
+			break;
+		}
 		case wchar_t('*') :
 		{
+			cout << "get " << dict["n_lvl"] << endl;
 			if ((seqlen == dist) && ((dict["n_lvl"] && (dist == 2)) || (dist != 2)))
 			{
 				if (seqlen > dict["n_lvl"])
@@ -370,14 +405,18 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					for (int h = 0; h < (seqlen - dict["n_lvl"]); h++)
 					{
 						insert(str, 0, L"<ul>\n", 5);
+						list.push_back(0);
 					}
 				}
 				else if (seqlen < dict["n_lvl"])
 				{
-					for (int h = 0; h < (dict["n_lvl"] - seqlen); h++)
+					int h = 0;
+					for (h; h < (dict["n_lvl"] - seqlen); h++)
 					{
-						insert(str, 0, L"</ul>\n", 6);
+						if (list[list.size() - 1 - h] == 0) insert(str, 0, L"</ul>\n", 6);
+						if (list[list.size() - 1 - h] == 1) insert(str, 0, L"</ol>\n", 6);
 					}
+					list.erase(list.end() - h, list.end());
 				}
 				insert(str, 0, L"<li>", 4);
 
@@ -386,7 +425,6 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				seqlen = 0;
 				return;
 			}
-			//TODO lists
 
 			if (seqlen == 1)
 			{
@@ -482,11 +520,14 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 	}
 }
 
-void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word)
+void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word, vector <int> &list)
 {
-	if ((dist == 0) && (dict["n_lvl"]) && (*it != wchar_t('*')))
+	if ((dist == 0) && (dict["n_lvl"]) && (*it != wchar_t('*')) && (*it != wchar_t('#')))
 	{
-		marked_list_end(str, dict);
+
+		cout << *it << endl;
+		list_end(str, dict, list);
+
 	}
 
 	if (iswalpha(*it) || iswalnum(*it))
@@ -494,7 +535,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 		if (seqlen > 0)
 		{
 			auto hlp = it;
-			changing(str, it, suspect, seqlen, dict, dist, word);
+			changing(str, it, suspect, seqlen, dict, dist, word, list);
 			if (hlp == it) str.push_back(*it);
 		}
 		else
@@ -517,7 +558,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -537,7 +578,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -557,7 +598,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -577,7 +618,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -597,7 +638,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -617,7 +658,27 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('#') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -637,7 +698,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				{
 					if (seqlen > 0)
 					{
-						changing(str, it, suspect, seqlen, dict, dist, word);
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
 					}
 					else
 					{
@@ -653,7 +714,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist, word);
+					changing(str, it, suspect, seqlen, dict, dist, word, list);
 					if (hlp == it)
 					{
 						str.push_back(*it);
@@ -672,7 +733,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist, word);
+					changing(str, it, suspect, seqlen, dict, dist, word, list);
 					if (hlp == it) list_item_end(str, dict);
 				}
 				else
@@ -686,7 +747,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				if (seqlen > 0)
 				{
 					auto hlp = it;
-					changing(str, it, suspect, seqlen, dict, dist, word);
+					changing(str, it, suspect, seqlen, dict, dist, word, list);
 					if (hlp == it) str.push_back(*it);
 				}
 				else
@@ -871,7 +932,7 @@ int mode_def(map <string, int> &dict)
 
 namespace Creole
 {
-	std::vector <wchar_t> gString::St_string(vector <wchar_t> utfbuf, map <string, int> &dict)
+	std::vector <wchar_t> gString::St_string(vector <wchar_t> utfbuf, map <string, int> &dict, std::vector <int> &list)
 	{
 		int seqlen = 0;
 		auto suspect = wchar_t('a');
@@ -883,7 +944,7 @@ namespace Creole
 		{
 			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')))
 			{
-				if (dict["section"]) section_end(new_str, dict);
+				if (dict["section"]) section_end(new_str, dict, list);
 				
 				int mode = 0;
 			}
@@ -899,7 +960,7 @@ namespace Creole
 				if (mode == 0)
 				{
 					filling(word1, mode, it, new_str);
-					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1);
+					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1, list);
 				}
 				else if (mode == 1)
 				{
@@ -931,10 +992,10 @@ namespace Creole
 		return new_str;
 	}
 
-	std::vector <wchar_t> gString::End_file(std::map <std::string, int> &dict)
+	std::vector <wchar_t> gString::End_file(std::map <std::string, int> &dict, vector <int> &list)
 	{
 		vector <wchar_t> v;
-		section_end(v, dict);
+		section_end(v, dict, list);
 		return v;
 	}
 }
