@@ -245,7 +245,6 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
 	int h = 0;
-	cout << list.size() << " " << dict["n_lvl"] << endl;
 	for (h; h < (dict["n_lvl"]); h++)
 	{
 		if (list[list.size() - 1 - h] == 0) insert(str, 0, L"</ul>\n", 6);
@@ -257,33 +256,30 @@ void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list
 
 void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
+	cout << dict["cursive"] << " " << dict["bold"];
+
 	if (dict["cursive"] > dict["bold"])
 	{
-		insert(str, 0, L"</em>", 5);
-		dict["cursive"] = 0;
-
 		if (dict["bold"])
 		{
 			insert(str, 0, L"</strong>", 9);
 			dict["bold"] = 0;
 		}
+		insert(str, 0, L"</em>", 5);
+		dict["cursive"] = 0;
 	}
 	else if (dict["cursive"] < dict["bold"])
 	{
-		insert(str, 0, L"</strong>", 9);
-		dict["bold"] = 0;
-
 		if (dict["cursive"])
 		{
 			insert(str, 0, L"</em>", 5);
 			dict["cursive"] = 0;
 		}
+		insert(str, 0, L"</strong>", 9);
+		dict["bold"] = 0;
 	}
 
 	list_end(str, dict, list);
-	
-	//TODO lists
-	dict["u_lvl"] = 0;
 
 	if (dict["section"]) insert(str, 0, L"</p>", 4);
 	dict["section"] = 0;
@@ -314,8 +310,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			else
 			{
 				insert(str, 0, L"<br/>\n", 6);
-				seqlen -= 2;
-				it -= 1;
+				seqlen -= 1;
 				suspect = *it;
 			}
 			break;
@@ -359,8 +354,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					}
 					insert(str, 0, L"<em>", 4);
 				}
-				seqlen -= 2;
-				it -= 1;
+				seqlen -= 1;
 				suspect = *it;
 			}
 			break;
@@ -391,13 +385,12 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 
 				dict["n_lvl"] = seqlen;
 				suspect = *it;
-				seqlen = 0;
+				seqlen = 1;
 			}
 			break;
 		}
 		case wchar_t('*') :
 		{
-			cout << "get " << dict["n_lvl"] << endl;
 			if ((seqlen == dist) && ((dict["n_lvl"] && (dist == 2)) || (dist != 2)))
 			{
 				if (seqlen > dict["n_lvl"])
@@ -422,7 +415,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 
 				dict["n_lvl"] = seqlen;
 				suspect = *it;
-				seqlen = 0;
+				seqlen = 1;
 				return;
 			}
 
@@ -451,8 +444,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					}
 					insert(str, 0, L"<strong>", 8);
 				}
-				seqlen -= 2;
-				it -= 1;
+				seqlen -= 1;
 				suspect = *it;
 			}
 			break;
@@ -524,8 +516,6 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 {
 	if ((dist == 0) && (dict["n_lvl"]) && (*it != wchar_t('*')) && (*it != wchar_t('#')))
 	{
-
-		cout << *it << endl;
 		list_end(str, dict, list);
 
 	}
@@ -542,6 +532,7 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 		{
 			str.push_back(*it);
 		}
+		seqlen = 0;
 	}
 	else
 	{
