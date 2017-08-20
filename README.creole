@@ -11,3 +11,4 @@ Simple parser of .creole files into .html.
 ** External links
 ** Interwiki links
 * Escape character
+* Lists(ordered and unordered)
