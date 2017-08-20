@@ -1,7 +1,6 @@
 #include "Header.h"
 #include <stdexcept>
 #include <ctype.h>
-#include <list>
 
 #pragma warning(disable : 4996)
 
@@ -20,6 +19,7 @@ vector <wchar_t *> protocols =
 map <wchar_t *, wchar_t *> wikies = 
 {
 	{L"main:", L"tests/"},
+	{L"main_pics", L"pics/"},
 	{L"Wikipedia:", L"https://en.wikipedia.org/wiki/"},
 };
 
@@ -93,12 +93,21 @@ void list_item_end(vector <wchar_t> &str, map <string, int> &dict)
 	if (dict["n_lvl"]) insert(str, 0, L"</li>", 5);
 }
 
+
 void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)//error in main part of link
 {
 	insert(str, 0, L"[[", 2);
 	if (word.size()) insert(str, 0, &word[0], word.size());
 	word.clear();
 	dict["mlink"] = 0;
+}
+
+void pic_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)
+{
+	insert(str, 0, L"{{", 2);
+	if (word.size()) insert(str, 0, &word[0], word.size());
+	word.clear();
+	dict["mpic"] = 0;
 }
 
 void link_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)//error in second part of link
@@ -111,6 +120,18 @@ void link_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t>
 	word2.clear();
 	dict["slink"] = 0;
 }
+
+void pic_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)
+{
+	insert(str, 0, L"{{", 2);
+	insert(str, 0, &word1[0], word1.size());
+	word1.clear();
+	str.push_back(wchar_t('|'));
+	insert(str, 0, &word2[0], word2.size());
+	word2.clear();
+	dict["spic"] = 0;
+}
+
 
 void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
 {
@@ -125,6 +146,16 @@ void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int
 	dict["flink"] = 0;
 }
 
+void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
+{
+
+	insert(new_str, 0, &word[0], word.size());
+	new_str.push_back(wchar_t('"'));
+	new_str.push_back(wchar_t('>'));
+
+	dict["mpic"] = 0;
+}
+
 void link_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)
 {
 
@@ -137,6 +168,19 @@ void link_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t
 
 	dict["flink"] = 0;
 }
+
+void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)
+{
+
+	insert(new_str, 0, &word1[0], word1.size());
+	new_str.push_back(wchar_t('"'));
+	insert(new_str, 0, L" alt=", 5);
+	new_str.push_back(wchar_t('"'));
+	insert(new_str, 0, &word2[0], word2.size());
+	new_str.push_back(wchar_t('"'));
+	new_str.push_back(wchar_t('>'));
+}
+
 
 void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)
 {
@@ -237,6 +281,14 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 		word.push_back(*it);
 	}
 	else if (mode == 3)
+	{
+		word.push_back(*it);
+	}
+	else if (mode == 4)
+	{
+		word.push_back(*it);
+	}
+	else if (mode == 5)
 	{
 		word.push_back(*it);
 	}
@@ -461,6 +513,23 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			else
 			{
 				for (int j = 0; j < seqlen; j++) str.push_back('[');
+				seqlen = 0;
+				suspect = *it;
+			}
+			break;
+		}
+		case wchar_t('{') :
+		{
+			if (seqlen == 2)
+			{
+				word.clear();
+				seqlen = 0;
+				dict["mpic"] = 1;
+				it--;
+			}
+			else
+			{
+				for (int j = 0; j < seqlen; j++) str.push_back('{');
 				seqlen = 0;
 				suspect = *it;
 			}
@@ -699,6 +768,26 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				}
 				break;
 			}
+			case wchar_t('{') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
 			//non syntax symbols
 			case wchar_t(':') :
 			{
@@ -848,6 +937,81 @@ void captionlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &
 	}
 }
 
+void mainpic_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word, int &seqlen, bool &foundation)
+{
+	if (*it == wchar_t('\n')) pic_error(str, word, dict);
+	else if (*it == wchar_t('|'))
+	{
+		
+		if (word.size())
+		{
+			word.erase(word.end() - 1, word.end());
+			dict["spic"] = 1;
+			dict["mpic"] = 0;
+			seqlen = 0;
+		}
+		else
+		{
+			insert(str, 0, L"{{", 2);
+		}
+		
+	}
+	else if (*it == wchar_t('}')) seqlen++;
+	else if (*it == wchar_t(':'))
+	{
+		foundation = link_identification(word);
+	}
+
+	if (seqlen == 2)
+	{
+		cout << word.size();
+		word.erase(word.end() - 2, word.end());
+		if (word.size())
+		{
+			insert(str, 0, L"<img src=", 9);
+			str.push_back(wchar_t('"'));
+			auto u = wikies.begin(); 
+			u++;
+			if (!foundation) insert(str, 0, u->second, wcslen(u->second));
+			pic_end(str, word, dict);
+		}
+		else
+		{
+			insert(str, 0, L"{{}}", 4);
+		}
+
+		seqlen = 0;
+		dict["mpic"] = 0;
+	}
+}
+
+void captionpic_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word1, vector <wchar_t> &word2, int &seqlen, bool &foundation)
+{
+	if (*it == wchar_t('\n')) link_error(str, word1, word2, dict); //TODO pic error
+	else if (*it == wchar_t('}')) seqlen++;
+
+	if (seqlen == 2)
+	{
+		word2.erase(word2.end() - 2, word2.end());
+		if (word2.size())
+		{
+			insert(str, 0, L"<img src=", 9);
+			str.push_back(wchar_t('"'));
+			auto u = wikies.begin(); // I don't know why wikies[L"main"] doesn't work.
+			u++;
+			if (!foundation) insert(str, 0, u->second, wcslen(u->second));
+			pic_end(str, word1, word2, dict);
+		}
+		else
+		{
+			pic_end(str, word1, dict);
+		}
+
+		seqlen = 0;
+		dict["spic"] = 0;
+	}
+}
+
 void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
 {
 	switch (*it)
@@ -914,6 +1078,10 @@ int mode_def(map <string, int> &dict)
 
 	if (dict["slink"]) return 3;
 
+	if (dict["mpic"]) return 4;
+
+	if (dict["spic"]) return 5;
+
 	if (dict["header"]) return 6;
 
 	if (dict["tilde"]) return 7;
@@ -966,6 +1134,16 @@ namespace Creole
 				{
 					filling(word2, mode, it, new_str);
 					captionlink_parsing_mode(new_str, it, dict, word1, word2, seqlen, foundation);
+				}
+				else if (mode == 4)
+				{
+					filling(word1, mode, it, new_str);
+					mainpic_parsing_mode(new_str, it, dict, word1, seqlen, foundation);
+				}
+				else if (mode == 5)
+				{
+					filling(word2, mode, it, new_str);
+					captionpic_parsing_mode(new_str, it, dict, word1, word2, seqlen, foundation);
 				}
 				else if (mode == 6)
 				{
