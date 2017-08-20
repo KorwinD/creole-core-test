@@ -30,7 +30,7 @@ vector <wchar_t> allowed_symbols =
 
 vector <wchar_t> punctuation =
 {
-	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ } //TODO add treatment of final letter in free link 
+	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
 };
 
 void clearing_forward(vector <wchar_t> &str)
@@ -141,16 +141,15 @@ void pic_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> 
 }
 
 
-void link_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
+void link_end(vector <wchar_t> &new_str, vector <wchar_t> &word, map <string, int> &dict)
 {
-
 	insert(new_str, 0, &word[0], word.size());
 	new_str.push_back(wchar_t('"'));
 	new_str.push_back(wchar_t('>'));
 	insert(new_str, 0, &word[0], word.size());
 	insert(new_str, 0, L"</a>", 4);
 	
-	
+	word.clear();
 	dict["flink"] = 0;
 }
 
@@ -174,7 +173,7 @@ void link_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t
 	insert(new_str, 0, L"</a>", 4);
 
 
-	dict["flink"] = 0;
+	//dict["flink"] = 0;
 }
 
 void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)
@@ -192,6 +191,8 @@ void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t>
 
 void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)
 {
+
+	//cout << word.size() << endl;
 	if (word.size() != 0)
 	{
 		auto i = protocols.begin();
@@ -875,6 +876,18 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 		{
 			if (i == allowed_symbols.end())
 			{
+				auto u = punctuation.begin();
+				for (u; ; u++)
+				{
+					if (u == punctuation.end()) break;
+
+					if (*u == word[word.size() - 1])
+					{
+						word.erase(word.end() - 1);
+						it--;
+					}
+				}
+
 				link_end(str, word, dict);
 				str.push_back(*it);
 				break;
@@ -887,7 +900,6 @@ void freelink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it,
 			}
 		}
 	}
-
 }
 
 void mainlink_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word, int &seqlen, bool &foundation)
