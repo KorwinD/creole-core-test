@@ -88,6 +88,14 @@ void insert(vector <wchar_t> &str, int shift, wchar_t *add, int len)
 	}
 }
 
+void insert(vector <wchar_t> &str, int shift, vector <wchar_t> word)
+{
+	for (int i = 0; i < word.size(); i++)
+	{
+		str.insert(str.end() - shift, word[i]);
+	}
+}
+
 void list_item_end(vector <wchar_t> &str, map <string, int> &dict)
 {
 	if (dict["n_lvl"]) insert(str, 0, L"</li>", 5);
@@ -151,7 +159,7 @@ void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int>
 
 	insert(new_str, 0, &word[0], word.size());
 	new_str.push_back(wchar_t('"'));
-	new_str.push_back(wchar_t('>'));
+	insert(new_str, 0, L"/>", 2);
 
 	dict["mpic"] = 0;
 }
@@ -178,7 +186,7 @@ void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t>
 	new_str.push_back(wchar_t('"'));
 	insert(new_str, 0, &word2[0], word2.size());
 	new_str.push_back(wchar_t('"'));
-	new_str.push_back(wchar_t('>'));
+	insert(new_str, 0, L"/>", 2);
 }
 
 
@@ -292,6 +300,14 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 	{
 		word.push_back(*it);
 	}
+	else if (mode == 6)
+	{
+		if ((word.size() == 0) && (*it == wchar_t(' '))) return;
+
+		if (*it == ' ') word.push_back(wchar_t('-'));
+		else if (*it == '\n') return;
+		else word.push_back(*it);
+	}
 }
 
 void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
@@ -308,7 +324,6 @@ void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list
 
 void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
-	cout << dict["cursive"] << " " << dict["bold"];
 
 	if (dict["cursive"] > dict["bold"])
 	{
@@ -337,10 +352,17 @@ void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &l
 	dict["section"] = 0;
 }
 
-void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict)
+void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <string, int> &dict, vector <wchar_t> &word)
 {
 	//cout << seqlen << endl;
 	str.erase(str.end() - seqlen, str.end());
+	insert(str, 0, L"<a name=", 8);
+	str.push_back(wchar_t('"'));
+	insert(str, 0, word);
+	str.push_back(wchar_t('"'));
+	str.push_back(wchar_t('>'));
+	insert(str, 0, L"</a>", 4);
+	insert(str, 0, L"</span>", 7);
 	insert(str, 0, L"</h", 3);
 	str.push_back(wchar_t('0' + dict["header"]));
 	insert(str, 0, L">", 2);
@@ -564,9 +586,10 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			{
 				if ((dist - seqlen) == 0)
 				{
-					insert(str , 0, L"<h", 2);
-					str.push_back(wchar_t('0'+seqlen));
+					insert(str, 0, L"<h", 2);
+					str.push_back(wchar_t('0' + seqlen));
 					str.push_back(wchar_t('>'));
+					insert(str, 0, L"<span>", 6);
 					dict["header"] = seqlen;
 				}
 				else
@@ -964,7 +987,6 @@ void mainpic_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, 
 
 	if (seqlen == 2)
 	{
-		cout << word.size();
 		word.erase(word.end() - 2, word.end());
 		if (word.size())
 		{
@@ -1012,13 +1034,13 @@ void captionpic_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &i
 	}
 }
 
-void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
+void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, vector <wchar_t> &word)
 {
 	switch (*it)
 	{
 		case wchar_t('\n') :
 		{
-			header_end(str, seqlen, suspect, dict);
+			header_end(str, seqlen, suspect, dict, word);
 			break;
 		}
 		case wchar_t('=') :
@@ -1147,7 +1169,8 @@ namespace Creole
 				}
 				else if (mode == 6)
 				{
-					header_parsing_mode(new_str, it, suspect, seqlen, dict);
+					filling(word1, mode, it, new_str);
+					header_parsing_mode(new_str, it, suspect, seqlen, dict, word1);
 				}
 				else if (mode == 7)
 				{
