@@ -1009,7 +1009,7 @@ void mainpic_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, 
 
 void captionpic_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word1, vector <wchar_t> &word2, int &seqlen, bool &foundation)
 {
-	if (*it == wchar_t('\n')) link_error(str, word1, word2, dict); //TODO pic error
+	if (*it == wchar_t('\n')) pic_error(str, word1, word2, dict);
 	else if (*it == wchar_t('}')) seqlen++;
 
 	if (seqlen == 2)
