@@ -6,6 +6,7 @@ Simple parser of .creole files into .html.
 * Headings
 * Line breaks
 * Links
+* Images
 ** Free-standing links
 ** Internal links
 ** External links
