@@ -325,6 +325,11 @@ void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list
 
 void block_end(vector <wchar_t> &str, map <string, int> &dict)
 {
+	if (dict["nowiki"] == 1)
+	{
+		insert(str, 0, L"</tt>", 5);
+		dict["nowiki"] = 0;
+	}
 
 	if (dict["cursive"] > dict["bold"])
 	{
@@ -346,6 +351,7 @@ void block_end(vector <wchar_t> &str, map <string, int> &dict)
 		insert(str, 0, L"</strong>", 9);
 		dict["bold"] = 0;
 	}
+
 }
 
 void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
@@ -395,8 +401,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			if (seqlen == 1)
 			{
 				str.push_back(wchar_t('\\'));
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			else
 			{
@@ -423,8 +428,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			if (seqlen == 1)
 			{
 				str.push_back(wchar_t('/'));
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			else
 			{
@@ -513,8 +517,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			if (seqlen == 1)
 			{
 				str.push_back(wchar_t('*'));
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			else
 			{
@@ -552,8 +555,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			else
 			{
 				for (int j = 0; j < seqlen; j++) str.push_back('[');
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			break;
 		}
@@ -566,11 +568,36 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				dict["mpic"] = 1;
 				it--;
 			}
+			else if ((seqlen == 3) && (dist == seqlen))
+			{
+				if (*it == wchar_t('\n'))
+				{
+					dict["nowiki"] = 2;
+					insert(str, 0, L"<pre>", 5);
+				}
+				else
+				{
+					dict["nowiki"] = 1;
+					insert(str, 0, L"<tt>", 4);
+					it--;
+					suspect = *it;
+					seqlen = 0;
+					return;
+				}
+			}
+			else if ((seqlen == 3) && (dist != seqlen))
+			{
+				dict["nowiki"] = 1;
+				insert(str, 0, L"<tt>", 4);
+				it--;
+				suspect = *it;
+				seqlen = 0;
+				return;
+			}
 			else
 			{
 				for (int j = 0; j < seqlen; j++) str.push_back('{');
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			break;
 		}
@@ -586,8 +613,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			else
 			{
 				for (int j = 0; j < seqlen; j++) str.push_back('~');
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			break;
 		}
@@ -596,8 +622,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			if (seqlen > 6)
 			{
 				for (int j = 0; j < seqlen; j++) str.push_back('=');
-				seqlen = 0;
-				suspect = *it;
+				catch_(it, suspect, seqlen);
 			}
 			else
 			{
@@ -612,8 +637,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				else
 				{
 					for (int j = 0; j < seqlen; j++) str.push_back('=');
-					seqlen = 0;
-					suspect = *it;
+					catch_(it, suspect, seqlen);
 				}
 			}
 			break;
@@ -710,8 +734,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					if (dict["table"] == 1)
 					{
 						for (int j = 0; j < seqlen; j++) str.push_back('|');
-						seqlen = 0;
-						suspect = *it;
+						catch_(it, suspect, seqlen);
 						dict["table"] = 0;
 					}
 					else if (dict["table"] == 2)
@@ -1301,6 +1324,35 @@ void tilde_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, ma
 	}
 }
 
+void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
+{
+	if (*it == wchar_t('}'))
+	{
+		seqlen++;
+	}
+	else if (*it == wchar_t('<'))
+	{
+		insert(str, 0, L"&lt;", 4);
+	}
+	else if (*it == wchar_t('>'))
+	{
+		insert(str, 0, L"&gt;", 4);
+	}
+	else
+	{
+		seqlen = 0;
+		str.push_back(*it);
+	}
+
+	if (seqlen == 3)
+	{
+		insert(str, 0, L"</tt>", 5);
+		suspect = *it;
+		seqlen = 1;
+		dict["nowiki"] = 0;
+	}
+}
+
 int mode_def(map <string, int> &dict)
 {
 	//0 — standart parsing mode
@@ -1311,8 +1363,9 @@ int mode_def(map <string, int> &dict)
 	//5 — caption part of image({{image.png|image}}) parsing mode
 	//6 — header parsing mode
 	//7 — tilde(~) parsing mode
-	//8 — inline nowiki parsing mode(monospace)
-	//9 — preformatted nowiki mode
+	//8 — table parsing mode.
+	//9 — inline nowiki parsing mode(monospace)
+	//10 — preformatted nowiki mode
 
 	if (dict["flink"]) return 1;
 
@@ -1329,6 +1382,9 @@ int mode_def(map <string, int> &dict)
 	if (dict["tilde"]) return 7;
 
 	if (dict["table"]) return 8;
+
+	if (dict["nowiki"] == 1) return 9;
+	else if (dict["nowiki"] == 2) return 10;
 
 	return 0;
 }
@@ -1400,8 +1456,11 @@ namespace Creole
 				}
 				else if (mode == 8)
 				{
-					filling(word1, mode, it, new_str);
 					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1, list);
+				}
+				else if (mode == 9)
+				{
+					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict);
 				}
 			}
 			it++;
