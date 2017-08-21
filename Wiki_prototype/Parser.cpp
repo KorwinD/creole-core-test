@@ -30,7 +30,7 @@ vector <wchar_t> allowed_symbols =
 
 vector <wchar_t> punctuation =
 {
-	{ '!', ';', '@', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
+	{ '!', ';', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
 };
 
 void clearing_forward(vector <wchar_t> &str)
@@ -323,7 +323,7 @@ void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list
 	dict["n_lvl"] = 0;
 }
 
-void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
+void block_end(vector <wchar_t> &str, map <string, int> &dict)
 {
 
 	if (dict["cursive"] > dict["bold"])
@@ -346,8 +346,17 @@ void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &l
 		insert(str, 0, L"</strong>", 9);
 		dict["bold"] = 0;
 	}
+}
+
+void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
+{
+
+	block_end(str, dict);
 
 	list_end(str, dict, list);
+
+	if (dict["table"]) insert(str, 0, L"</table>\n", 9);
+	dict["table"] = 0;
 
 	if (dict["section"]) insert(str, 0, L"</p>", 4);
 	dict["section"] = 0;
@@ -368,6 +377,13 @@ void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <strin
 	str.push_back(wchar_t('0' + dict["header"]));
 	insert(str, 0, L">", 2);
 	dict["header"] = 0;
+}
+
+void catch_(vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen)
+{
+	seqlen = 0;
+	suspect = *it;
+	//TODO Replace other code with this function.
 }
 
 void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word, vector <int> &list)
@@ -602,6 +618,173 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			}
 			break;
 		}
+		case wchar_t('|') :
+		{
+			if (!dict["table"])
+			{
+				if (dist == seqlen)
+				{
+					if ((*it == wchar_t('\n')) && (seqlen == 1))
+					{
+						str.push_back(wchar_t('|'));
+						catch_(it, suspect, seqlen);
+						return;
+					}
+
+					insert(str, 0, L"<table>\n", 8);
+					insert(str, 0, L"<tr>\n", 5);
+
+					for (int h = 0; h < seqlen - 1; h++)
+					{
+						insert(str, 0, L"<td>", 4);
+						insert(str, 0, L"</td>", 5);
+					}
+
+					if (*it == wchar_t('='))
+					{
+						insert(str, 0, L"<th>", 4);
+						dict["table"] = 3;
+						catch_(it, suspect, seqlen);
+						return;
+					}
+					else if (*it == wchar_t('\n'))
+					{
+						insert(str, 0, L"<td>", 4);
+						insert(str, 0, L"</td>\n", 6);
+						insert(str, 0, L"</tr>", 5);
+						dict["table"] = 1;
+						catch_(it, suspect, seqlen);
+						return;
+					}
+					else
+					{
+						insert(str, 0, L"<td>", 4);
+						dict["table"] = 2;
+						catch_(it, suspect, seqlen);
+						return;
+					}
+				}
+				else
+				{
+					for (int j = 0; j < seqlen; j++) str.push_back('|');
+					seqlen = 0;
+					suspect = *it;
+				}
+			}
+			else
+			{
+				if (dist == seqlen)
+				{
+					insert(str, 0, L"<tr>\n", 5);
+					for (int h = 0; h < seqlen - 1; h++)
+					{
+						insert(str, 0, L"<td>", 4);
+						insert(str, 0, L"</td>", 5);
+					}
+
+					if (*it == wchar_t('='))
+					{
+						insert(str, 0, L"<th>", 4);
+						dict["table"] = 3;
+						catch_(it, suspect, seqlen);
+						return;
+					}
+					else if (*it == wchar_t('\n'))
+					{
+						insert(str, 0, L"<td>", 4);
+						insert(str, 0, L"</td>\n", 6);
+						insert(str, 0, L"</tr>", 5);
+						catch_(it, suspect, seqlen);
+						return;
+					}
+					else
+					{
+						insert(str, 0, L"<td>", 4);
+						dict["table"] = 2;
+						catch_(it, suspect, seqlen);
+						return;
+					}
+				}
+				else
+				{
+					if (dict["table"] == 1)
+					{
+						for (int j = 0; j < seqlen; j++) str.push_back('|');
+						seqlen = 0;
+						suspect = *it;
+						dict["table"] = 0;
+					}
+					else if (dict["table"] == 2)
+					{
+						block_end(str, dict);
+
+						insert(str, 0, L"</td>\n", 6);
+
+						for (int h = 0; h < seqlen - 1; h++)
+						{
+							insert(str, 0, L"<td>", 4);
+							insert(str, 0, L"</td>\n", 6);
+						}
+
+						if (*it == wchar_t('='))
+						{
+							insert(str, 0, L"<th>", 4);
+							dict["table"] = 3;
+							catch_(it, suspect, seqlen);
+							return;
+						}
+						else if (*it == wchar_t('\n'))
+						{
+							insert(str, 0, L"</tr>", 5);
+							dict["table"] = 1;
+							catch_(it, suspect, seqlen);
+							return;
+						}
+						else
+						{
+							insert(str, 0, L"<td>", 4);
+							dict["table"] = 2;
+							catch_(it, suspect, seqlen);
+							return;
+						}
+					}
+					else if(dict["table"] == 3)
+					{
+						block_end(str, dict);
+						
+						insert(str, 0, L"</th>\n", 6);
+
+						for (int h = 0; h < seqlen - 1; h++)
+						{
+							insert(str, 0, L"<td>", 4);
+							insert(str, 0, L"</td>\n", 6);
+						}
+
+						if (*it == wchar_t('='))
+						{
+							insert(str, 0, L"<th>", 4);
+							catch_(it, suspect, seqlen);
+							return;
+						}
+						else if (*it == wchar_t('\n'))
+						{
+							insert(str, 0, L"</tr>", 5);
+							dict["table"] = 1;
+							catch_(it, suspect, seqlen);
+							return;
+						}
+						else
+						{
+							insert(str, 0, L"<td>", 4);
+							dict["table"] = 2;
+							catch_(it, suspect, seqlen);
+							return;
+						}
+					}
+				}
+			}
+			break;
+		}
 	}
 }
 
@@ -610,7 +793,12 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 	if ((dist == 0) && (dict["n_lvl"]) && (*it != wchar_t('*')) && (*it != wchar_t('#')))
 	{
 		list_end(str, dict, list);
+	}
 
+	if ((dist == 0) && (*it != wchar_t('|')) && dict["table"])
+	{
+		insert(str, 0, L"</table>\n", 9);
+		dict["table"] = 0;
 	}
 
 	if (iswalpha(*it) || iswalnum(*it))
@@ -793,6 +981,26 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 				break;
 			}
 			case wchar_t('{') :
+			{
+				if (*it == suspect)
+				{
+					seqlen++;
+				}
+				else
+				{
+					if (seqlen > 0)
+					{
+						changing(str, it, suspect, seqlen, dict, dist, word, list);
+					}
+					else
+					{
+						suspect = *it;
+						seqlen = 1;
+					}
+				}
+				break;
+			}
+			case wchar_t('|') :
 			{
 				if (*it == suspect)
 				{
@@ -1120,6 +1328,8 @@ int mode_def(map <string, int> &dict)
 
 	if (dict["tilde"]) return 7;
 
+	if (dict["table"]) return 8;
+
 	return 0;
 }
 
@@ -1187,6 +1397,11 @@ namespace Creole
 				else if (mode == 7)
 				{
 					tilde_parsing_mode(new_str, it, dict);
+				}
+				else if (mode == 8)
+				{
+					filling(word1, mode, it, new_str);
+					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1, list);
 				}
 			}
 			it++;
