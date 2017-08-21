@@ -96,11 +96,6 @@ void insert(vector <wchar_t> &str, int shift, vector <wchar_t> word)
 	}
 }
 
-void list_item_end(vector <wchar_t> &str, map <string, int> &dict)
-{
-	if (dict["n_lvl"]) insert(str, 0, L"</li>", 5);
-}
-
 
 void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)//error in main part of link
 {
@@ -354,6 +349,12 @@ void block_end(vector <wchar_t> &str, map <string, int> &dict)
 
 }
 
+void list_item_end(vector <wchar_t> &str, map <string, int> &dict)
+{
+	block_end(str, dict);
+	if (dict["n_lvl"]) insert(str, 0, L"</li>", 5);
+}
+
 void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
 
@@ -476,6 +477,16 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					}
 					list.erase(list.end() - h, list.end());
 				}
+				else
+				{
+					if (list[list.size() - 1] == 0)
+					{
+						insert(str, 0, L"</ul>\n", 6);
+						insert(str, 0, L"<ol>\n", 5);
+						list.erase(list.end() - 1, list.end());
+						list.push_back(1);
+					}
+				}
 				insert(str, 0, L"<li>", 4);
 
 				dict["n_lvl"] = seqlen;
@@ -505,6 +516,16 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 						if (list[list.size() - 1 - h] == 1) insert(str, 0, L"</ol>\n", 6);
 					}
 					list.erase(list.end() - h, list.end());
+				}
+				else
+				{
+					if (list[list.size() - 1] == 1)
+					{
+						insert(str, 0, L"</ol>\n", 6);
+						insert(str, 0, L"<ul>\n", 5);
+						list.erase(list.end() - 1, list.end());
+						list.push_back(0);
+					}
 				}
 				insert(str, 0, L"<li>", 4);
 
@@ -1081,9 +1102,11 @@ void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wc
 			{
 				if (seqlen > 0)
 				{
+					//if (*it == wchar_t(' ')) cout << seqlen << " " << suspect << endl;
 					auto hlp = it;
 					changing(str, it, suspect, seqlen, dict, dist, word, list);
 					if (hlp == it) str.push_back(*it);
+					seqlen = 0;
 				}
 				else
 				{
@@ -1416,6 +1439,7 @@ namespace Creole
 				}
 
 				auto mode = mode_def(dict);
+
 				if (mode == 0)
 				{
 					filling(word1, mode, it, new_str);
