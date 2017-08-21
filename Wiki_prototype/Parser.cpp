@@ -16,6 +16,31 @@ vector <wchar_t *> protocols =
 	{ L"mailto:" },
 };
 
+vector <wchar_t *> langs =
+{
+	{ L"!c" },
+	{ L"!coffeescript" },
+	{ L"!csharp" },
+	{ L"!css" },
+	{ L"!d" },
+	{ L"!generic" },
+	{ L"!go" },
+	{ L"!haskell" },
+	{ L"!html" },
+	{ L"!java:" },
+	{ L"!javascript" },
+	{ L"!json" },
+	{ L"!lua" },
+	{ L"!php" },
+	{ L"!python" },
+	{ L"!r" },
+	{ L"!ruby" },
+	{ L"!scheme" },
+	{ L"!shell" },
+	{ L"!smalltalk" },
+	{ L"!sql" },
+};
+
 map <wchar_t *, wchar_t *> wikies = 
 {
 	{L"main:", L"tests/"},
@@ -63,10 +88,6 @@ void clearing(vector <wchar_t> &str, int type)
 	{
 		clearing_backward(str);
 		clearing_forward(str);
-	}
-	else
-	{
-		//TODO Erorrs.
 	}
 }
 
@@ -390,7 +411,6 @@ void catch_(vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen)
 {
 	seqlen = 0;
 	suspect = *it;
-	//TODO Replace other code with this function.
 }
 
 void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word, vector <int> &list)
