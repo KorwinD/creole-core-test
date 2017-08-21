@@ -55,7 +55,7 @@ vector <wchar_t> allowed_symbols =
 
 vector <wchar_t> punctuation =
 {
-	{ '!', ';', ':', '"', '?', '.', ',', wchar_t(27) /* ' */ }
+	{ '!', ';', ':', '"', '?', '.', ',', '(', ')', wchar_t(27) /* ' */ }
 };
 
 void clearing_forward(vector <wchar_t> &str)
@@ -615,6 +615,9 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 				{
 					dict["nowiki"] = 2;
 					insert(str, 0, L"<pre>", 5);
+					it--;
+					suspect = *it;
+					seqlen = 0;
 				}
 				else
 				{
@@ -623,7 +626,6 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 					it--;
 					suspect = *it;
 					seqlen = 0;
-					return;
 				}
 			}
 			else if ((seqlen == 3) && (dist != seqlen))
@@ -1367,7 +1369,7 @@ void tilde_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, ma
 	}
 }
 
-void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict)
+void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist)
 {
 	if (*it == wchar_t('}'))
 	{
@@ -1381,6 +1383,10 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 	{
 		insert(str, 0, L"&gt;", 4);
 	}
+	else if (*it == wchar_t('\n'))
+	{
+		
+	}
 	else
 	{
 		seqlen = 0;
@@ -1389,10 +1395,28 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 
 	if (seqlen == 3)
 	{
-		insert(str, 0, L"</tt>", 5);
-		suspect = *it;
-		seqlen = 1;
-		dict["nowiki"] = 0;
+		if ((dict["nowiki"] == 2))
+		{
+			insert(str, 0, L"</pre>\n", 7);
+			suspect = *it;
+			seqlen = 1;
+			dict["nowiki"] = 0;
+		}
+		else if ((dict["nowiki"] == 3))
+		{
+			insert(str, 0, L"</code>\n", 8);
+			insert(str, 0, L"</pre>\n", 7);
+			suspect = *it;
+			seqlen = 1;
+			dict["nowiki"] = 0;
+		}
+		else
+		{
+			insert(str, 0, L"</tt>", 5);
+			suspect = *it;
+			seqlen = 1;
+			dict["nowiki"] = 0;
+		}
 	}
 }
 
@@ -1427,7 +1451,7 @@ int mode_def(map <string, int> &dict)
 	if (dict["table"]) return 8;
 
 	if (dict["nowiki"] == 1) return 9;
-	else if (dict["nowiki"] == 2) return 10;
+	else if (dict["nowiki"] > 1) return 10;
 
 	return 0;
 }
@@ -1504,7 +1528,11 @@ namespace Creole
 				}
 				else if (mode == 9)
 				{
-					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict);
+					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+				}
+				else if (mode == 10)
+				{
+					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
 				}
 			}
 			it++;
