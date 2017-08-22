@@ -827,7 +827,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			{
 				if (dist == seqlen)
 				{
-					insert(str, 0, L"<tr>\n", 5); //ERROR
+					insert(str, 0, L"<tr>\n", 5);
 					for (int h = 0; h < seqlen - 1; h++)
 					{
 						insert(str, 0, L"<td>", 4);
