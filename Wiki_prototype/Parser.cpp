@@ -18,27 +18,27 @@ vector <wchar_t *> protocols =
 
 vector <wchar_t *> langs =
 {
-	{ L"!c" },
-	{ L"!coffeescript" },
-	{ L"!csharp" },
-	{ L"!css" },
-	{ L"!d" },
-	{ L"!generic" },
-	{ L"!go" },
-	{ L"!haskell" },
-	{ L"!html" },
-	{ L"!java:" },
-	{ L"!javascript" },
-	{ L"!json" },
-	{ L"!lua" },
-	{ L"!php" },
-	{ L"!python" },
-	{ L"!r" },
-	{ L"!ruby" },
-	{ L"!scheme" },
-	{ L"!shell" },
-	{ L"!smalltalk" },
-	{ L"!sql" },
+	{ L"c" },
+	{ L"coffeescript" },
+	{ L"csharp" },
+	{ L"css" },
+	{ L"d" },
+	{ L"generic" },
+	{ L"go" },
+	{ L"haskell" },
+	{ L"html" },
+	{ L"java:" },
+	{ L"javascript" },
+	{ L"json" },
+	{ L"lua" },
+	{ L"php" },
+	{ L"python" },
+	{ L"r" },
+	{ L"ruby" },
+	{ L"scheme" },
+	{ L"shell" },
+	{ L"smalltalk" },
+	{ L"sql" },
 };
 
 map <wchar_t *, wchar_t *> wikies = 
@@ -50,7 +50,7 @@ map <wchar_t *, wchar_t *> wikies =
 
 vector <wchar_t> allowed_symbols = 
 {
-	{'!', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */}
+	{'!', '~', '(', ')', ';', '@', '/', '&', '+', '$', '?', '-', '_', '.', '#', '*', '[', ']', wchar_t(27) /* ' */}
 };
 
 vector <wchar_t> punctuation =
@@ -204,6 +204,23 @@ void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t>
 	insert(new_str, 0, L"/>", 2);
 }
 
+int lang_identification(vector <wchar_t> &word)
+{
+	if (word.size() != 0)
+	{
+		auto i = langs.begin();
+		for (i; ; i++)
+		{
+			if (i == langs.end()) return -2;
+
+			if (wctcmp(word, *i) == 0)
+			{
+				return distance(langs.begin(), i);
+			}
+		}
+	}
+	return -1;
+}
 
 void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)
 {
@@ -290,7 +307,7 @@ bool link_identification(vector <wchar_t> &word)
 	return false;
 }
 
-void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, vector <wchar_t> str)
+void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, vector <wchar_t> str, map <string, int> &dict)
 {
 	if (mode == 0) 
 	{
@@ -323,6 +340,29 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 
 		if (*it == ' ') word.push_back(wchar_t('-'));
 		else if (*it == '\n') return;
+		else word.push_back(*it);
+	}
+	else if (mode == 7)
+	{
+		if (*it == wchar_t(' '))
+		{
+			str.push_back(*it);
+			dict["tilde"] = 0;
+			word.clear();
+		}
+		else if (*it == wchar_t('\n'))
+		{
+			dict["tilde"] = 0;
+			word.clear();
+		}
+		else
+		{
+			word.push_back(*it);
+		}
+	}
+	else if (mode == 10)
+	{
+		if (*it == '\n') word.clear();
 		else word.push_back(*it);
 	}
 }
@@ -404,6 +444,10 @@ void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <strin
 	insert(str, 0, L"</h", 3);
 	str.push_back(wchar_t('0' + dict["header"]));
 	insert(str, 0, L">", 2);
+	if (dict["header"] < 3)
+	{
+		insert(str, 0, L"<hr>", 4);
+	}
 	dict["header"] = 0;
 }
 
@@ -648,15 +692,25 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 		{
 			if (seqlen == 1)
 			{
-				word.clear();
-				seqlen = 0;
-				dict["tilde"] = 1;
-
+				if ((*it == (wchar_t('\n'))) || (*it == (wchar_t(' '))))
+				{
+					str.push_back(wchar_t('~'));
+				}
+				else
+				{
+					word.clear();
+					*it--;
+					seqlen = 0;
+					dict["tilde"] = 1;
+				}
 			}
 			else
 			{
-				for (int j = 0; j < seqlen; j++) str.push_back('~');
-				catch_(it, suspect, seqlen);
+
+				for (int j = 0; j < seqlen-1; j++) str.push_back('~');
+				word.clear();
+				seqlen = 0;
+				dict["tilde"] = 1;
 			}
 			break;
 		}
@@ -712,7 +766,6 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 						insert(str, 0, L"<th>", 4);
 						dict["table"] = 3;
 						catch_(it, suspect, seqlen);
-						return;
 					}
 					else if (*it == wchar_t('\n'))
 					{
@@ -721,14 +774,14 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 						insert(str, 0, L"</tr>", 5);
 						dict["table"] = 1;
 						catch_(it, suspect, seqlen);
-						return;
 					}
 					else
 					{
 						insert(str, 0, L"<td>", 4);
 						dict["table"] = 2;
-						catch_(it, suspect, seqlen);
-						return;
+						seqlen = 1;
+						suspect = *it;
+						//catch_(it, suspect, seqlen);
 					}
 				}
 				else
@@ -742,7 +795,7 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 			{
 				if (dist == seqlen)
 				{
-					insert(str, 0, L"<tr>\n", 5);
+					insert(str, 0, L"<tr>\n", 5); //ERROR
 					for (int h = 0; h < seqlen - 1; h++)
 					{
 						insert(str, 0, L"<td>", 4);
@@ -754,7 +807,6 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 						insert(str, 0, L"<th>", 4);
 						dict["table"] = 3;
 						catch_(it, suspect, seqlen);
-						return;
 					}
 					else if (*it == wchar_t('\n'))
 					{
@@ -762,14 +814,12 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 						insert(str, 0, L"</td>\n", 6);
 						insert(str, 0, L"</tr>", 5);
 						catch_(it, suspect, seqlen);
-						return;
 					}
 					else
 					{
 						insert(str, 0, L"<td>", 4);
 						dict["table"] = 2;
 						catch_(it, suspect, seqlen);
-						return;
 					}
 				}
 				else
@@ -797,21 +847,18 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 							insert(str, 0, L"<th>", 4);
 							dict["table"] = 3;
 							catch_(it, suspect, seqlen);
-							return;
 						}
 						else if (*it == wchar_t('\n'))
 						{
 							insert(str, 0, L"</tr>", 5);
 							dict["table"] = 1;
 							catch_(it, suspect, seqlen);
-							return;
 						}
 						else
 						{
 							insert(str, 0, L"<td>", 4);
 							dict["table"] = 2;
 							catch_(it, suspect, seqlen);
-							return;
 						}
 					}
 					else if(dict["table"] == 3)
@@ -830,21 +877,19 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 						{
 							insert(str, 0, L"<th>", 4);
 							catch_(it, suspect, seqlen);
-							return;
 						}
 						else if (*it == wchar_t('\n'))
 						{
 							insert(str, 0, L"</tr>", 5);
 							dict["table"] = 1;
 							catch_(it, suspect, seqlen);
-							return;
 						}
 						else
 						{
 							insert(str, 0, L"<td>", 4);
 							dict["table"] = 2;
 							catch_(it, suspect, seqlen);
-							return;
+
 						}
 					}
 				}
@@ -1356,24 +1401,29 @@ void header_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 	}
 }
 
-void tilde_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict)
+void tilde_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, map <string, int> &dict, vector <wchar_t> &word)
 {
-	if ((*it == wchar_t(' ')) || (*it == wchar_t('\n')))
+	if ((*it == wchar_t(' ')))
 	{
-		str.push_back(*it);
-		dict["tilde"] = 0;
+		if (word.size()) insert(str, 0, word);
+		else str.push_back(wchar_t('~'));
 	}
-	else
+	else if (*it == wchar_t('\n'))
 	{
-		str.push_back(*it);
+		if (word.size()) insert(str, 0, word);
+		else str.push_back(wchar_t('~'));
 	}
 }
 
-void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist)
+void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word)
 {
 	if (*it == wchar_t('}'))
 	{
 		seqlen++;
+	}
+	else if (*it == wchar_t('~'))
+	{
+		dict["tilde"] = 1;
 	}
 	else if (*it == wchar_t('<'))
 	{
@@ -1385,7 +1435,36 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 	}
 	else if (*it == wchar_t('\n'))
 	{
-		
+		if (dict["nowiki"] == 1)
+		{
+			
+		}
+		if (dict["nowiki"] == 2)
+		{
+			int n = lang_identification(word);
+			if (n > -1)
+			{
+				str.erase(str.end() - word.size(), str.end());
+				insert(str, 0, L"<code data-language=", 20);
+				str.push_back(wchar_t('"'));
+				insert(str, 0, langs[n], wcslen(langs[n]));
+				str.push_back(wchar_t('"'));
+				str.push_back(wchar_t('>'));
+				dict["nowiki"] = 3;
+			}
+
+			if (dist == 0)
+			{
+				str.push_back(wchar_t(' '));
+			}
+		}
+		else if (dict["nowiki"] == 3)
+		{
+			if (dist == 0)
+			{
+				str.push_back(wchar_t('\n'));
+			}
+		}
 	}
 	else
 	{
@@ -1395,26 +1474,24 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 
 	if (seqlen == 3)
 	{
+		cout << *it;
 		if ((dict["nowiki"] == 2))
 		{
 			insert(str, 0, L"</pre>\n", 7);
-			suspect = *it;
-			seqlen = 1;
+			catch_(it, suspect, seqlen);
 			dict["nowiki"] = 0;
 		}
 		else if ((dict["nowiki"] == 3))
 		{
 			insert(str, 0, L"</code>\n", 8);
 			insert(str, 0, L"</pre>\n", 7);
-			suspect = *it;
-			seqlen = 1;
+			catch_(it, suspect, seqlen);
 			dict["nowiki"] = 0;
 		}
 		else
 		{
 			insert(str, 0, L"</tt>", 5);
-			suspect = *it;
-			seqlen = 1;
+			catch_(it, suspect, seqlen);
 			dict["nowiki"] = 0;
 		}
 	}
@@ -1448,7 +1525,7 @@ int mode_def(map <string, int> &dict)
 
 	if (dict["tilde"]) return 7;
 
-	if (dict["table"]) return 8;
+	if ((dict["table"]) && (!dict["nowiki"])) return 8;
 
 	if (dict["nowiki"] == 1) return 9;
 	else if (dict["nowiki"] > 1) return 10;
@@ -1464,11 +1541,11 @@ namespace Creole
 		auto suspect = wchar_t('a');
 		vector <wchar_t> new_str, word1, word2;
 		bool foundation = false;
-		if (mode_def(dict) == 0) clearing(utfbuf, 2);
+		if (mode_def(dict) == (0 || 8)) clearing(utfbuf, 2);
 		auto it = utfbuf.begin();
 		while (it != utfbuf.end())
 		{
-			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')))
+			if ((it == utfbuf.begin()) && (*it == wchar_t('\n')) && (mode_def(dict) != 10))
 			{
 				if (dict["section"]) section_end(new_str, dict, list);
 				
@@ -1486,7 +1563,7 @@ namespace Creole
 
 				if (mode == 0)
 				{
-					filling(word1, mode, it, new_str);
+					filling(word1, mode, it, new_str, dict);
 					no_limitation_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1, list);
 				}
 				else if (mode == 1)
@@ -1495,32 +1572,33 @@ namespace Creole
 				}
 				else if (mode == 2)
 				{
-					filling(word1, mode, it, new_str);
+					filling(word1, mode, it, new_str, dict);;
 					mainlink_parsing_mode(new_str, it, dict, word1, seqlen, foundation);
 				}
 				else if (mode == 3)
 				{
-					filling(word2, mode, it, new_str);
+					filling(word2, mode, it, new_str, dict);
 					captionlink_parsing_mode(new_str, it, dict, word1, word2, seqlen, foundation);
 				}
 				else if (mode == 4)
 				{
-					filling(word1, mode, it, new_str);
+					filling(word1, mode, it, new_str, dict);
 					mainpic_parsing_mode(new_str, it, dict, word1, seqlen, foundation);
 				}
 				else if (mode == 5)
 				{
-					filling(word2, mode, it, new_str);
+					filling(word2, mode, it, new_str, dict);
 					captionpic_parsing_mode(new_str, it, dict, word1, word2, seqlen, foundation);
 				}
 				else if (mode == 6)
 				{
-					filling(word1, mode, it, new_str);
+					filling(word1, mode, it, new_str, dict);
 					header_parsing_mode(new_str, it, suspect, seqlen, dict, word1);
 				}
 				else if (mode == 7)
 				{
-					tilde_parsing_mode(new_str, it, dict);
+					tilde_parsing_mode(new_str, it, dict, word1);
+					filling(word1, mode, it, new_str, dict);
 				}
 				else if (mode == 8)
 				{
@@ -1528,11 +1606,12 @@ namespace Creole
 				}
 				else if (mode == 9)
 				{
-					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1);
 				}
 				else if (mode == 10)
 				{
-					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it));
+					nowiki_parsing_mode(new_str, it, suspect, seqlen, dict, distance(utfbuf.begin(), it), word1);
+					filling(word1, mode, it, new_str, dict);
 				}
 			}
 			it++;
