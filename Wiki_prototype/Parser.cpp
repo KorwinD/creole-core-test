@@ -1541,7 +1541,7 @@ namespace Creole
 		auto suspect = wchar_t('a');
 		vector <wchar_t> new_str, word1, word2;
 		bool foundation = false;
-		if (mode_def(dict) == (0 || 8)) clearing(utfbuf, 2);
+		if ((mode_def(dict) == 0) || (mode_def(dict) == 8)) clearing(utfbuf, 2);
 		auto it = utfbuf.begin();
 		while (it != utfbuf.end())
 		{
