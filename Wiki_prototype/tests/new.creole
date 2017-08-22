@@ -73,6 +73,7 @@ list item
 You can use nowiki syntax if you would like do stuff like this:
 
 {{{
+#!python
 Guitar Chord C:
 
 ||---|---|---|

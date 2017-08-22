@@ -8,6 +8,10 @@
 
 using namespace std;
 
+/*
+Global variables.
+*/
+
 vector <wchar_t *> protocols =
 {
 	{ L"https:" },
@@ -16,29 +20,29 @@ vector <wchar_t *> protocols =
 	{ L"mailto:" },
 };
 
-vector <wchar_t *> langs =
+map <wchar_t *, wchar_t *> langs =
 {
-	{ L"c" },
-	{ L"coffeescript" },
-	{ L"csharp" },
-	{ L"css" },
-	{ L"d" },
-	{ L"generic" },
-	{ L"go" },
-	{ L"haskell" },
-	{ L"html" },
-	{ L"java:" },
-	{ L"javascript" },
-	{ L"json" },
-	{ L"lua" },
-	{ L"php" },
-	{ L"python" },
-	{ L"r" },
-	{ L"ruby" },
-	{ L"scheme" },
-	{ L"shell" },
-	{ L"smalltalk" },
-	{ L"sql" },
+	{ L"#!c", L"c" },
+	{ L"#!coffeescript", L"coffeescript" },
+	{ L"#!csharp", L"csharp" },
+	{ L"#!css", L"css" },
+	{ L"#!d", L"d" },
+	{ L"#!generic", L"generic" },
+	{ L"#!go", L"go" },
+	{ L"#!haskell", L"haskell" },
+	{ L"#!html", L"html" },
+	{ L"#!java", L"java" },
+	{ L"#!javascript", L"javascript" },
+	{ L"#!json", L"json" },
+	{ L"#!lua", L"lua" },
+	{ L"#!php", L"php" },
+	{ L"#!python", L"python" },
+	{ L"#!r", L"r" },
+	{ L"#!ruby", L"ruby" },
+	{ L"#!scheme", L"scheme" },
+	{ L"#!shell", L"shell" },
+	{ L"#!smalltalk", L"smalltalk" },
+	{ L"#!sql", L"sql" },
 };
 
 map <wchar_t *, wchar_t *> wikies = 
@@ -57,6 +61,10 @@ vector <wchar_t> punctuation =
 {
 	{ '!', ';', ':', '"', '?', '.', ',', '(', ')', wchar_t(27) /* ' */ }
 };
+
+/*
+Function for remove whitespaces at the beginning and end of the line.
+*/
 
 void clearing_forward(vector <wchar_t> &str)
 {
@@ -91,7 +99,11 @@ void clearing(vector <wchar_t> &str, int type)
 	}
 }
 
-int wctcmp(vector <wchar_t> a, wchar_t *b)
+/*
+My special own function.
+*/
+
+int wctcmp(vector <wchar_t> a, wchar_t *b) //Comparsion of wchar_t *.
 {
 	for (int i = 0; i < min(a.size(), wcslen(b)); i++)
 	{
@@ -117,6 +129,9 @@ void insert(vector <wchar_t> &str, int shift, vector <wchar_t> word)
 	}
 }
 
+/*
+Functions for link parsing.
+*/
 
 void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)//error in main part of link
 {
@@ -126,15 +141,7 @@ void link_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int>
 	dict["mlink"] = 0;
 }
 
-void pic_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)
-{
-	insert(str, 0, L"{{", 2);
-	if (word.size()) insert(str, 0, &word[0], word.size());
-	word.clear();
-	dict["mpic"] = 0;
-}
-
-void link_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)//error in second part of link
+void link_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)//error in second part of link.
 {
 	insert(str, 0, L"[[", 2);
 	insert(str, 0, &word1[0], word1.size());
@@ -145,19 +152,8 @@ void link_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t>
 	dict["slink"] = 0;
 }
 
-void pic_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)
-{
-	insert(str, 0, L"{{", 2);
-	insert(str, 0, &word1[0], word1.size());
-	word1.clear();
-	str.push_back(wchar_t('|'));
-	insert(str, 0, &word2[0], word2.size());
-	word2.clear();
-	dict["spic"] = 0;
-}
 
-
-void link_end(vector <wchar_t> &new_str, vector <wchar_t> &word, map <string, int> &dict)
+void link_end(vector <wchar_t> &new_str, vector <wchar_t> &word, map <string, int> &dict)//End of free-standing link.
 {
 	insert(new_str, 0, &word[0], word.size());
 	new_str.push_back(wchar_t('"'));
@@ -169,63 +165,17 @@ void link_end(vector <wchar_t> &new_str, vector <wchar_t> &word, map <string, in
 	dict["flink"] = 0;
 }
 
-void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)
+void link_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)//End of markup link [[]].
 {
-
-	insert(new_str, 0, &word[0], word.size());
-	new_str.push_back(wchar_t('"'));
-	insert(new_str, 0, L"/>", 2);
-
-	dict["mpic"] = 0;
-}
-
-void link_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)
-{
-
 	insert(new_str, 0, &word1[0], word1.size());
 	new_str.push_back(wchar_t('"'));
 	new_str.push_back(wchar_t('>'));
 	insert(new_str, 0, &word2[0], word2.size());
 	insert(new_str, 0, L"</a>", 4);
-
-
-	//dict["flink"] = 0;
 }
 
-void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)
+void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)//Identification of link.
 {
-
-	insert(new_str, 0, &word1[0], word1.size());
-	new_str.push_back(wchar_t('"'));
-	insert(new_str, 0, L" alt=", 5);
-	new_str.push_back(wchar_t('"'));
-	insert(new_str, 0, &word2[0], word2.size());
-	new_str.push_back(wchar_t('"'));
-	insert(new_str, 0, L"/>", 2);
-}
-
-int lang_identification(vector <wchar_t> &word)
-{
-	if (word.size() != 0)
-	{
-		auto i = langs.begin();
-		for (i; ; i++)
-		{
-			if (i == langs.end()) return -2;
-
-			if (wctcmp(word, *i) == 0)
-			{
-				return distance(langs.begin(), i);
-			}
-		}
-	}
-	return -1;
-}
-
-void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <string, int> &dict)
-{
-
-	//cout << word.size() << endl;
 	if (word.size() != 0)
 	{
 		auto i = protocols.begin();
@@ -268,7 +218,7 @@ void link_identification(vector <wchar_t> &word, vector <wchar_t> &str, map <str
 	}
 }
 
-bool link_identification(vector <wchar_t> &word)
+bool link_identification(vector <wchar_t> &word)//Additional identification of link.
 {
 
 
@@ -289,7 +239,7 @@ bool link_identification(vector <wchar_t> &word)
 				return true;
 			}
 		}
-		
+
 		for (j; ; j++)
 		{
 			if (j == wikies.end())
@@ -306,6 +256,77 @@ bool link_identification(vector <wchar_t> &word)
 	}
 	return false;
 }
+
+/*
+Functions for picture parsing.
+*/
+
+void pic_error(vector <wchar_t> &str, vector <wchar_t> &word, map <string, int> &dict)//Error in main part of picture markup.
+{
+	insert(str, 0, L"{{", 2);
+	if (word.size()) insert(str, 0, &word[0], word.size());
+	word.clear();
+	dict["mpic"] = 0;
+}
+
+void pic_error(vector <wchar_t> &str, vector <wchar_t> &word1, vector <wchar_t> &word2, map <string, int> &dict)//Error in caption part of link.
+{
+	insert(str, 0, L"{{", 2);
+	insert(str, 0, &word1[0], word1.size());
+	word1.clear();
+	str.push_back(wchar_t('|'));
+	insert(str, 0, &word2[0], word2.size());
+	word2.clear();
+	dict["spic"] = 0;
+}
+
+void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word, map <string, int> &dict)//End of picture markup.
+{
+
+	insert(new_str, 0, &word[0], word.size());
+	new_str.push_back(wchar_t('"'));
+	insert(new_str, 0, L"/>", 2);
+
+	dict["mpic"] = 0;
+}
+
+void pic_end(vector <wchar_t> &new_str, vector <wchar_t> word1, vector <wchar_t> word2, map <string, int> &dict)//End of picture with alt text.
+{
+
+	insert(new_str, 0, &word1[0], word1.size());
+	new_str.push_back(wchar_t('"'));
+	insert(new_str, 0, L" alt=", 5);
+	new_str.push_back(wchar_t('"'));
+	insert(new_str, 0, &word2[0], word2.size());
+	new_str.push_back(wchar_t('"'));
+	insert(new_str, 0, L"/>", 2);
+}
+
+/*
+Special function for identification of programming/markup/.. language in preformatted text.
+*/
+
+wchar_t* lang_identification(vector <wchar_t> &word)
+{
+	if (word.size() != 0)
+	{
+		auto i = langs.begin();
+		for (i; ; i++)
+		{
+			if (i == langs.end()) return NULL;
+
+			if (wctcmp(word, i->first) == 0)
+			{
+				return i->second;
+			}
+		}
+	}
+	return NULL;
+}
+
+/*
+Function for parallel parsing. It's necessary sometimes.
+*/
 
 void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, vector <wchar_t> str, map <string, int> &dict)
 {
@@ -367,17 +388,9 @@ void filling(vector <wchar_t> &word, int mode, vector<wchar_t>::iterator &it, ve
 	}
 }
 
-void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
-{
-	int h = 0;
-	for (h; h < (dict["n_lvl"]); h++)
-	{
-		if (list[list.size() - 1 - h] == 0) insert(str, 0, L"</ul>\n", 6);
-		if (list[list.size() - 1 - h] == 1) insert(str, 0, L"</ol>\n", 6);
-	}
-	list.clear();
-	dict["n_lvl"] = 0;
-}
+/*
+Function for parsing end markup constructions.
+*/
 
 void block_end(vector <wchar_t> &str, map <string, int> &dict)
 {
@@ -416,6 +429,18 @@ void list_item_end(vector <wchar_t> &str, map <string, int> &dict)
 	if (dict["n_lvl"]) insert(str, 0, L"</li>", 5);
 }
 
+void list_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
+{
+	int h = 0;
+	for (h; h < (dict["n_lvl"]); h++)
+	{
+		if (list[list.size() - 1 - h] == 0) insert(str, 0, L"</ul>\n", 6);
+		if (list[list.size() - 1 - h] == 1) insert(str, 0, L"</ol>\n", 6);
+	}
+	list.clear();
+	dict["n_lvl"] = 0;
+}
+
 void section_end(vector <wchar_t> &str, map <string, int> &dict, vector <int> &list)
 {
 
@@ -451,12 +476,19 @@ void header_end(vector <wchar_t> &str, int &seqlen, wchar_t &suspect, map <strin
 	dict["header"] = 0;
 }
 
+
+/*
+Additional function.
+*/
 void catch_(vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen)
 {
 	seqlen = 0;
 	suspect = *it;
 }
 
+/*
+Special function for parsing. It checks for markup constructions.
+*/
 void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word, vector <int> &list)
 {
 	switch (suspect)
@@ -898,6 +930,10 @@ void changing(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &sus
 		}
 	}
 }
+
+/*
+Functions for modes of parsing.
+*/
 
 void no_limitation_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, wchar_t &suspect, int &seqlen, map <string, int> &dict, int dist, vector <wchar_t> &word, vector <int> &list)
 {
@@ -1441,13 +1477,13 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 		}
 		if (dict["nowiki"] == 2)
 		{
-			int n = lang_identification(word);
-			if (n > -1)
+			auto n = lang_identification(word);
+			if (n != NULL)
 			{
 				str.erase(str.end() - word.size(), str.end());
 				insert(str, 0, L"<code data-language=", 20);
 				str.push_back(wchar_t('"'));
-				insert(str, 0, langs[n], wcslen(langs[n]));
+				insert(str, 0, n, wcslen(n));
 				str.push_back(wchar_t('"'));
 				str.push_back(wchar_t('>'));
 				dict["nowiki"] = 3;
@@ -1474,7 +1510,6 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 
 	if (seqlen == 3)
 	{
-		cout << *it;
 		if ((dict["nowiki"] == 2))
 		{
 			insert(str, 0, L"</pre>\n", 7);
@@ -1496,6 +1531,10 @@ void nowiki_parsing_mode(vector <wchar_t> &str, vector<wchar_t>::iterator &it, w
 		}
 	}
 }
+
+/*
+Function for identification of parsing mode.
+*/
 
 int mode_def(map <string, int> &dict)
 {
